@@ -1,0 +1,6 @@
+all:
+  hosts:
+    pve:
+      # REPLACE with your Proxmox node IP/hostname
+      ansible_host: 192.168.88.10
+      ansible_user: root

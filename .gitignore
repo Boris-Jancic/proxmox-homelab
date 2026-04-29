@@ -1,0 +1,4 @@
+group_vars/all/secrets.yml
+*.retry
+.vault_pass
+__pycache__/
