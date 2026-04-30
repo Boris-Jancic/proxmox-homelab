@@ -1,0 +1,14 @@
+# Copy to secrets.yml (gitignored) and fill in.
+# Once it works, encrypt with:  ansible-vault encrypt group_vars/all/secrets.yml
+
+# Token auth
+secret_proxmox_api_token_id: "TOKEN_NAME"
+secret_proxmox_api_token_secret: "TOKEN_VALUE"
+
+# User auth
+secret_proxmox_api_user: "PVE_USER_NAME"
+secret_proxmox_api_user_password: "PVE_USER_PASSWORD"
+
+# Password applied to lxc
+secret_lxc_root_password: "changeme"
+

@@ -1,6 +1,18 @@
+proxmox_api_host: "127.0.0.1"
+proxmox_api_port: 8006
+
+# proxmox_api_user: "root@pam!ansible-token"
+# proxmox_api_token_id: "{{ secret_proxmox_api_token_id }}"
+# proxmox_api_token_secret: "{{ secret_proxmox_api_token_secret }}"
+
+proxmox_api_user: "{{ secret_proxmox_api_user }}"
+proxmox_api_password: "{{ secret_proxmox_api_user_password }}"
+lxc_root_password: "{{ secret_lxc_root_password }}"
+
+proxmox_template_vmid: 799
+proxmox_storage: "local-lvm"
+
 proxmox_node: pve
-proxmox_api_host: "{{ hostvars['pve'].ansible_host }}"
-proxmox_api_user: "root@pam"
 
 network_gateway: 192.168.88.1
 
@@ -10,9 +22,9 @@ lxc_swap: 256
 
 # CTID 105 stirling-pdf uses .107 — preserved from the original bash script.
 lxc_containers:
-  - { ctid: 100, hostname: nginx-proxy,  ip: 192.168.88.100/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 101, hostname: pi-hole,      ip: 192.168.88.101/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 102, hostname: vaultwarden,  ip: 192.168.88.102/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 103, hostname: uptime-kuma,  ip: 192.168.88.103/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 104, hostname: homepage,     ip: 192.168.88.104/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 105, hostname: stirling-pdf, ip: 192.168.88.107/24, memory: 256, disk: 4, cores: 1 }
+  - { ctid: 200, hostname: nginx-proxy,  ip: 192.168.88.200/24, memory: 256, disk: 4, cores: 1 }
+  # - { ctid: 101, hostname: pi-hole,      ip: 192.168.88.101/24, memory: 256, disk: 4, cores: 1 }
+  # - { ctid: 102, hostname: vaultwarden,  ip: 192.168.88.102/24, memory: 256, disk: 4, cores: 1 }
+  # - { ctid: 103, hostname: uptime-kuma,  ip: 192.168.88.103/24, memory: 256, disk: 4, cores: 1 }
+  # - { ctid: 104, hostname: homepage,     ip: 192.168.88.104/24, memory: 256, disk: 4, cores: 1 }
+  # - { ctid: 105, hostname: stirling-pdf, ip: 192.168.88.107/24, memory: 256, disk: 4, cores: 1 }
