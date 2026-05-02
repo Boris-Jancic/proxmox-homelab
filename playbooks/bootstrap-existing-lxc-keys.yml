@@ -1,0 +1,40 @@
+---
+# One-time retrofit: pushes the controller's SSH pubkey into LXCs that were
+# created before provision-lxc.yml started passing `pubkey:` at create time.
+# Idempotent — safe to re-run.
+- name: Push controller SSH key into existing LXCs
+  hosts: pve
+  gather_facts: false
+
+  tasks:
+    - name: Ensure /root/.ssh exists in each LXC
+      command: pct exec {{ hostvars[item].ctid }} -- mkdir -p /root/.ssh
+      loop: "{{ groups['lxc_containers'] }}"
+      loop_control:
+        label: "{{ hostvars[item].ctid }} {{ item }}"
+      changed_when: false
+
+    - name: Check if controller pubkey already authorized
+      shell: |
+        pct exec {{ hostvars[item].ctid }} -- grep -qF "{{ controller_ssh_pubkey }}" /root/.ssh/authorized_keys
+      register: key_check
+      failed_when: false
+      changed_when: false
+      loop: "{{ groups['lxc_containers'] }}"
+      loop_control:
+        label: "{{ hostvars[item].ctid }} {{ item }}"
+
+    - name: Append controller pubkey to authorized_keys
+      shell: |
+        echo "{{ controller_ssh_pubkey }}" | pct exec {{ hostvars[item.item].ctid }} -- tee -a /root/.ssh/authorized_keys >/dev/null
+      loop: "{{ key_check.results }}"
+      when: item.rc != 0
+      loop_control:
+        label: "{{ hostvars[item.item].ctid }} {{ item.item }}"
+
+    - name: Enforce 0600 on authorized_keys
+      command: pct exec {{ hostvars[item].ctid }} -- chmod 600 /root/.ssh/authorized_keys
+      loop: "{{ groups['lxc_containers'] }}"
+      loop_control:
+        label: "{{ hostvars[item].ctid }} {{ item }}"
+      changed_when: false

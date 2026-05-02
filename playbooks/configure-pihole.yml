@@ -1,0 +1,6 @@
+---
+- name: Configure pi-hole
+  hosts: pi-hole
+  gather_facts: false
+  roles:
+    - pihole

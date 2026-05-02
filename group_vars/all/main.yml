@@ -3,16 +3,13 @@ proxmox_api_host: "{{ hostvars['pve'].ansible_host }}"
 proxmox_api_user: "root@pam"
 
 network_gateway: 192.168.88.1
+network_prefix: "/24"
 
 lxc_template: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
 lxc_storage: local-lvm
 lxc_swap: 256
 
-# CTID 105 stirling-pdf uses .107 — preserved from the original bash script.
-lxc_containers:
-  - { ctid: 100, hostname: nginx-proxy,  ip: 192.168.88.100/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 101, hostname: pi-hole,      ip: 192.168.88.101/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 102, hostname: vaultwarden,  ip: 192.168.88.102/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 103, hostname: uptime-kuma,  ip: 192.168.88.103/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 104, hostname: homepage,     ip: 192.168.88.104/24, memory: 256, disk: 4, cores: 1 }
-  - { ctid: 105, hostname: stirling-pdf, ip: 192.168.88.107/24, memory: 256, disk: 4, cores: 1 }
+# Read controller's SSH public key from disk so it gets baked into new LXCs
+# at create time. Override the path here if you use rsa or a different file.
+controller_ssh_pubkey_path: "~/.ssh/id_ed25519.pub"
+controller_ssh_pubkey: "{{ lookup('file', controller_ssh_pubkey_path) }}"

@@ -1,0 +1,17 @@
+PIHOLE_INTERFACE=eth0
+IPV4_ADDRESS={{ ansible_host }}{{ network_prefix }}
+IPV6_ADDRESS=
+{% for dns in pihole_dns_upstreams %}
+PIHOLE_DNS_{{ loop.index }}={{ dns }}
+{% endfor %}
+QUERY_LOGGING={{ pihole_query_logging }}
+INSTALL_WEB_SERVER=true
+INSTALL_WEB_INTERFACE=true
+LIGHTTPD_ENABLED=true
+CACHE_SIZE={{ pihole_cache_size }}
+DNS_FQDN_REQUIRED=true
+DNS_BOGUS_PRIV=true
+DNSMASQ_LISTENING={{ pihole_dnsmasq_listening }}
+WEBPASSWORD={{ pihole_web_password | hash('sha256') | hash('sha256') }}
+BLOCKING_ENABLED={{ pihole_blocking_enabled }}
+DHCP_ACTIVE={{ pihole_dhcp_active }}

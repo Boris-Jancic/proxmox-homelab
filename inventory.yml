@@ -4,3 +4,45 @@ all:
       # REPLACE with your Proxmox node IP/hostname
       ansible_host: 192.168.88.10
       ansible_user: root
+  children:
+    lxc_containers:
+      vars:
+        ansible_user: root
+      hosts:
+        nginx-proxy:
+          ctid: 100
+          ansible_host: 192.168.88.100
+          memory: 256
+          disk: 4
+          cores: 1
+        pi-hole:
+          ctid: 101
+          ansible_host: 192.168.88.101
+          memory: 256
+          disk: 4
+          cores: 1
+        vaultwarden:
+          ctid: 102
+          ansible_host: 192.168.88.102
+          memory: 256
+          disk: 4
+          cores: 1
+        uptime-kuma:
+          ctid: 103
+          ansible_host: 192.168.88.103
+          memory: 256
+          disk: 4
+          cores: 1
+        homepage:
+          ctid: 104
+          ansible_host: 192.168.88.104
+          memory: 256
+          disk: 4
+          cores: 1
+        stirling-pdf:
+          ctid: 105
+          # .107 not .105 — preserved from the original bash script
+          ansible_host: 192.168.88.107
+          memory: 256
+          disk: 4
+          cores: 1
