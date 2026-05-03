@@ -10,25 +10,32 @@
         api_host: "{{ proxmox_api_host }}"
         api_user: "{{ proxmox_api_user }}"
         api_password: "{{ proxmox_api_password }}"
+
         validate_certs: false
         node: "{{ proxmox_node }}"
         vmid: "{{ hostvars[item].ctid }}"
         hostname: "{{ item }}"
         ostemplate: "{{ lxc_template }}"
-        cores: "{{ hostvars[item].cores }}"
-        memory: "{{ hostvars[item].memory }}"
-        swap: "{{ lxc_swap }}"
-        storage: "{{ lxc_storage }}"
-        disk: "{{ hostvars[item].disk }}"
-        netif:
-          net0: "name=eth0,bridge=vmbr0,ip={{ hostvars[item].ansible_host }}{{ network_prefix }},gw={{ network_gateway }}"
         password: "{{ lxc_root_password }}"
         pubkey: "{{ controller_ssh_pubkey }}"
         unprivileged: true
+
+        cores: "{{ hostvars[item].cores }}"
+        memory: "{{ hostvars[item].memory }}"
+
+        swap: "{{ lxc_swap }}"
+        disk_volume:
+          storage: "{{ lxc_storage }}"
+          size: "{{ hostvars[item].disk }}"
+
+        netif:
+          net0: "name=eth0,bridge=vmbr0,ip={{ hostvars[item].ansible_host }}{{ network_prefix }},gw={{ network_gateway }}"
+
         features:
           - nesting=1
         onboot: true
         state: present
+
       loop: "{{ groups['lxc_containers'] }}"
       loop_control:
         label: "{{ hostvars[item].ctid }} {{ item }}"

@@ -1,29 +1,23 @@
 ---
-- name: Verify pi-hole is installed
+- name: Detect pi-hole binary
   stat:
     path: /usr/local/bin/pihole
   register: pihole_bin
 
-- name: Fail if pi-hole binary missing
-  fail:
-    msg: "pi-hole not installed. This role manages config for an existing install — install pi-hole manually first."
+- name: Install pi-hole if missing
+  include_tasks: task_install_pihole.yml
   when: not pihole_bin.stat.exists
 
-- name: Verify pi-hole v5.x layout (setupVars.conf present)
+- name: Verify pihole.toml is present (v6+)
   stat:
-    path: /etc/pihole/setupVars.conf
-  register: setupvars_file
+    path: /etc/pihole/pihole.toml
+  register: pihole_toml
 
-- name: Fail if setupVars.conf absent (likely pi-hole v6+)
+- name: Fail if pihole.toml absent
   fail:
-    msg: "setupVars.conf not found — likely pi-hole v6+, which uses pihole.toml. This role targets v5.x."
-  when: not setupvars_file.stat.exists
+    msg: "pihole.toml not found — install may have failed, or this is a pre-v6 install."
+  when: not pihole_toml.stat.exists
 
-- name: Render /etc/pihole/setupVars.conf
-  template:
-    src: setupVars.conf.j2
-    dest: /etc/pihole/setupVars.conf
-    owner: root
-    group: root
-    mode: "0644"
-  notify: restart pihole dns
+- name: Manage web admin password
+  include_tasks: task_password_sync.yml
+
