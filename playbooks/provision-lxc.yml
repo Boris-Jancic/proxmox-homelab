@@ -13,25 +13,32 @@
 
         validate_certs: false
         node: "{{ proxmox_node }}"
-        vmid: "{{ item.ctid }}"
-        hostname: "{{ item.hostname }}"
+        vmid: "{{ hostvars[item].ctid }}"
+        hostname: "{{ item }}"
         ostemplate: "{{ lxc_template }}"
-        cores: "{{ item.cores }}"
-        memory: "{{ item.memory }}"
-        swap: "{{ lxc_swap }}"
-        storage: "{{ lxc_storage }}"
-        disk: "{{ item.disk }}"
-        netif:
-          net0: "name=eth0,bridge=vmbr0,ip={{ item.ip }},gw={{ network_gateway }}"
         password: "{{ lxc_root_password }}"
+        pubkey: "{{ controller_ssh_pubkey }}"
         unprivileged: true
+
+        cores: "{{ hostvars[item].cores }}"
+        memory: "{{ hostvars[item].memory }}"
+
+        swap: "{{ lxc_swap }}"
+        disk_volume:
+          storage: "{{ lxc_storage }}"
+          size: "{{ hostvars[item].disk }}"
+
+        netif:
+          net0: "name=eth0,bridge=vmbr0,ip={{ hostvars[item].ansible_host }}{{ network_prefix }},gw={{ network_gateway }}"
+
         features:
           - nesting=1
         onboot: true
         state: present
-      loop: "{{ lxc_containers }}"
+
+      loop: "{{ groups['lxc_containers'] }}"
       loop_control:
-        label: "{{ item.ctid }} {{ item.hostname }}"
+        label: "{{ hostvars[item].ctid }} {{ item }}"
 
     - name: Ensure LXC containers are started
       community.general.proxmox:
@@ -40,8 +47,8 @@
         api_password: "{{ proxmox_api_password }}"
         validate_certs: false
         node: "{{ proxmox_node }}"
-        vmid: "{{ item.ctid }}"
+        vmid: "{{ hostvars[item].ctid }}"
         state: started
-      loop: "{{ lxc_containers }}"
+      loop: "{{ groups['lxc_containers'] }}"
       loop_control:
-        label: "{{ item.ctid }} {{ item.hostname }}"
+        label: "{{ hostvars[item].ctid }} {{ item }}"

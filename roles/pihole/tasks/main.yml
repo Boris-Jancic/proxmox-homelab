@@ -1,0 +1,23 @@
+---
+- name: Detect pi-hole binary
+  stat:
+    path: /usr/local/bin/pihole
+  register: pihole_bin
+
+- name: Install pi-hole if missing
+  include_tasks: task_install_pihole.yml
+  when: not pihole_bin.stat.exists
+
+- name: Verify pihole.toml is present (v6+)
+  stat:
+    path: /etc/pihole/pihole.toml
+  register: pihole_toml
+
+- name: Fail if pihole.toml absent
+  fail:
+    msg: "pihole.toml not found — install may have failed, or this is a pre-v6 install."
+  when: not pihole_toml.stat.exists
+
+- name: Manage web admin password
+  include_tasks: task_password_sync.yml
+

@@ -1,0 +1,11 @@
+  pihole_dns_upstreams:
+    - 1.1.1.1
+    - 1.0.0.1
+    - "{{ network_gateway }}"
+
+  pihole_query_logging: "true"
+  pihole_dnsmasq_listening: "local"
+  pihole_blocking_enabled: "true"
+  pihole_dhcp_active: "false"
+  pihole_cache_size: 10000
+
