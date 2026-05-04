@@ -46,3 +46,16 @@ all:
           memory: 256
           disk: 4
           cores: 1
+        pi-hole-from-scratch:
+          ctid: 111
+          ansible_host: 192.168.88.111
+          memory: 256
+          disk: 4
+          cores: 1
+    pihole:
+      hosts:
+        pi-hole:
+        pi-hole-from-scratch:
+    vaultwarden:
+      hosts:
+        vaultwarden:

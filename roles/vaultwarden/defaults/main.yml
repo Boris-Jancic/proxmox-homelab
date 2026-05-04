@@ -1,0 +1,16 @@
+---
+# Pin a specific image tag — `latest` would silently upgrade your password
+# vault on every `docker compose up -d`. Bump deliberately.
+vaultwarden_image: "vaultwarden/server:1.32.7"
+
+vaultwarden_install_dir: /opt/vaultwarden
+vaultwarden_data_dir: /opt/vaultwarden/data
+
+# DOMAIN over plain HTTP disables WebAuthn / U2F / push. Update to your real
+# HTTPS URL once nginx-proxy fronts this CT.
+vaultwarden_domain: "http://192.168.88.102"
+
+# Flip to "false" after registering the first account, then re-run the role.
+vaultwarden_signups_allowed: "true"
+
+vaultwarden_host_port: 80

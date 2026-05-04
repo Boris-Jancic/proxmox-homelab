@@ -1,0 +1,6 @@
+---
+- name: Install docker engine and compose plugin
+  include_tasks: install_docker.yml
+
+- name: Deploy vaultwarden via docker compose
+  include_tasks: deploy.yml

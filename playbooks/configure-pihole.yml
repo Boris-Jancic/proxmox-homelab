@@ -1,7 +1,12 @@
 ---
+<<<<<<< Updated upstream
 - name: Install / Configure pi-hole
   hosts: 
     - pi-hole
+=======
+- name: Install and configure pi-hole
+  hosts: pihole
+>>>>>>> Stashed changes
   gather_facts: true
   roles:
     - pihole
