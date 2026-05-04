@@ -1,6 +1,18 @@
+proxmox_api_host: "127.0.0.1"
+proxmox_api_port: 8006
+
+# proxmox_api_user: "root@pam!ansible-token"
+# proxmox_api_token_id: "{{ secret_proxmox_api_token_id }}"
+# proxmox_api_token_secret: "{{ secret_proxmox_api_token_secret }}"
+
+proxmox_api_user: "{{ secret_proxmox_api_user }}"
+proxmox_api_password: "{{ secret_proxmox_api_user_password }}"
+lxc_root_password: "{{ secret_lxc_root_password }}"
+
+proxmox_template_vmid: 799
+proxmox_storage: "local-lvm"
+
 proxmox_node: pve
-proxmox_api_host: "{{ hostvars['pve'].ansible_host }}"
-proxmox_api_user: "root@pam"
 
 network_gateway: 192.168.88.1
 network_prefix: "/24"
