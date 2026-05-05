@@ -1,4 +1,10 @@
 ---
+# Installs Docker CE + the compose v2 plugin from Docker's official apt repo.
+# Debian's `docker.io` package lags upstream and ships without `docker compose`,
+# so we use the upstream repo instead.
+#
+# Idempotent: re-running this is a no-op once Docker is in place.
+
 - name: Install docker apt prerequisites
   apt:
     name:

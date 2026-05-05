@@ -1,4 +1,4 @@
 ---
 # Docker is installed via the `docker` role declared in meta/main.yml.
-- name: Deploy vaultwarden via docker compose
+- name: Deploy homepage via docker compose
   include_tasks: deploy.yml

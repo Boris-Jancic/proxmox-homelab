@@ -1,0 +1,6 @@
+---
+# Docker engine + compose plugin must be in place before we render the compose
+# file or call `docker compose up`. Ansible deduplicates role deps within a
+# play, so listing this from multiple service roles is safe.
+dependencies:
+  - role: docker

@@ -1,0 +1,11 @@
+services:
+  homepage:
+    image: {{ homepage_image }}
+    container_name: homepage
+    restart: unless-stopped
+    ports:
+      - "{{ homepage_host_port }}:3000"
+    volumes:
+      - {{ homepage_config_dir }}:/app/config
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: "{{ homepage_allowed_hosts }}"
