@@ -6,13 +6,13 @@ vaultwarden_image: "vaultwarden/server:1.32.7"
 vaultwarden_install_dir: /opt/vaultwarden
 vaultwarden_data_dir: /opt/vaultwarden/data
 
-# DOMAIN over plain HTTP disables WebAuthn / U2F / push. Update to your real
-# HTTPS URL once nginx-proxy fronts this CT.
-vaultwarden_domain: "http://192.168.88.102:8080"
+# DOMAIN must match the public HTTPS URL the browser hits, otherwise
+# WebAuthn / U2F / push break (RP ID mismatch). nginx-proxy fronts this at
+# vault.jancic.website → http://192.168.88.102:8080.
+vaultwarden_domain: "https://vault.jancic.website"
 
 # Flip to "false" after registering the first account, then re-run the role.
 vaultwarden_signups_allowed: "true"
 
-# High port avoids `net.ipv4.ip_unprivileged_port_start` sysctl writes that
-# unprivileged LXCs reject. nginx-proxy CT will reverse-proxy 80/443 → here.
+# Unprivileged port — nginx-proxy CT fronts 80/443 → here.
 vaultwarden_host_port: 8080
