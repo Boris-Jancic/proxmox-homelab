@@ -16,17 +16,6 @@
         vmid: "{{ hostvars[item].ctid }}"
         hostname: "{{ item }}"
         ostemplate: "{{ lxc_template }}"
-<<<<<<< Updated upstream
-=======
-        cores: "{{ hostvars[item].cores }}"
-        memory: "{{ hostvars[item].memory }}"
-        swap: "{{ lxc_swap }}"
-        disk_volume:
-          storage: "{{ lxc_storage }}"
-          size: "{{ hostvars[item].disk }}"
-        netif:
-          net0: "name=eth0,bridge=vmbr0,ip={{ hostvars[item].ansible_host }}{{ network_prefix }},gw={{ network_gateway }}"
->>>>>>> Stashed changes
         password: "{{ lxc_root_password }}"
         pubkey: "{{ controller_ssh_pubkey }}"
         unprivileged: true
