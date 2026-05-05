@@ -43,6 +43,10 @@ all:
           disk: 4
           cores: 1
           lxc_docker_host: true
+          # Host header allow-list for homepage v0.10+. Include every name
+          # the browser might send: LAN IP:port for direct access, plus the
+          # public hostname when fronted by nginx-proxy.
+          homepage_allowed_hosts: "homepage.jancic.website,192.168.88.104:3000"
         stirling-pdf:
           ctid: 105
           # .107 not .105 — preserved from the original bash script
