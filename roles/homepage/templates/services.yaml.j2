@@ -1,0 +1,66 @@
+# Managed by Ansible (roles/homepage/templates/services.yaml.j2).
+# Hostnames pull from inventory.yml so any IP change re-renders here on next
+# `ansible-playbook playbooks/configure-homepage.yml` run.
+#
+# Widget secrets use homepage's HOMEPAGE_VAR_* env-var substitution so
+# secrets.yml values never land in this file. The compose template wires the
+# env vars in.
+
+- Infrastructure:
+    - Proxmox:
+        href: https://{{ hostvars['pve'].ansible_host }}:8006/
+        description: PVE node management
+        icon: proxmox.png
+
+    - Pi-hole:
+        href: http://{{ hostvars['pi-hole'].ansible_host }}/admin
+        description: DNS + ad-block
+        icon: pi-hole.png
+        widget:
+          type: pihole
+          url: http://{{ hostvars['pi-hole'].ansible_host }}
+          # `version: 6` is required for pi-hole v6+ — without it the widget
+          # talks to v5 API paths and silently shows empty stats.
+          version: 6
+          # Set in compose env as HOMEPAGE_VAR_PIHOLE_KEY. v6 accepts the
+          # web admin password or an app-password from /admin > Settings > API.
+          key: '{% raw %}{{HOMEPAGE_VAR_PIHOLE_KEY}}{% endraw %}'
+
+    - Nginx Proxy:
+        href: http://{{ hostvars['nginx-proxy'].ansible_host }}/
+        description: Reverse proxy (manual config)
+        icon: nginx.png
+
+- Services:
+    - Vaultwarden:
+        href: http://{{ hostvars['vaultwarden'].ansible_host }}:8080/
+        description: Password manager
+        icon: vaultwarden.png
+
+    - Uptime Kuma:
+        href: http://{{ hostvars['uptime-kuma'].ansible_host }}:3001/
+        description: Service uptime monitor
+        icon: uptime-kuma.png
+        # Uncomment once you've created an API key in Uptime Kuma settings,
+        # added it to secrets.yml as `uptime_kuma_api_key`, and exposed it
+        # via HOMEPAGE_VAR_UPTIMEKUMA_KEY in the compose template.
+        # widget:
+        #   type: uptimekuma
+        #   url: http://{{ hostvars['uptime-kuma'].ansible_host }}:3001
+        #   slug: <status-page-slug>
+
+    - Stirling PDF:
+        href: http://{{ hostvars['stirling-pdf'].ansible_host }}:8080/
+        description: PDF tools
+        icon: stirling-pdf.png
+
+- Storage:
+    - Nextcloud:
+        # Update once the AIO VM is on the network and you know its IP.
+        href: https://nextcloud.jancic.website/
+        description: File storage + sync
+        icon: nextcloud.png
+        # widget:
+        #   type: nextcloud
+        #   url: https://nextcloud.jancic.website
+        #   key: '{% raw %}{{HOMEPAGE_VAR_NEXTCLOUD_KEY}}{% endraw %}'

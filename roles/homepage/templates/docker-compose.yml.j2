@@ -9,3 +9,7 @@ services:
       - {{ homepage_config_dir }}:/app/config
     environment:
       HOMEPAGE_ALLOWED_HOSTS: "{{ homepage_allowed_hosts }}"
+      # Widget secrets injected as HOMEPAGE_VAR_*; services.yaml references
+      # them via {{ '{{HOMEPAGE_VAR_FOO}}' }} substitution. Keeps secrets
+      # out of the rendered config files on the CT.
+      HOMEPAGE_VAR_PIHOLE_KEY: "{{ pihole_web_password | default('') }}"
