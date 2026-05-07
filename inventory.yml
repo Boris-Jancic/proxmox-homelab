@@ -4,10 +4,12 @@ all:
       # REPLACE with your Proxmox node IP/hostname
       ansible_host: 192.168.88.10
       ansible_user: root
+
   children:
     lxc_containers:
       vars:
         ansible_user: root
+
       hosts:
         nginx-proxy:
           ctid: 100
@@ -15,12 +17,14 @@ all:
           memory: 256
           disk: 4
           cores: 1
+
         pi-hole:
           ctid: 101
           ansible_host: 192.168.88.101
           memory: 256
           disk: 4
           cores: 1
+
         vaultwarden:
           ctid: 102
           ansible_host: 192.168.88.102
@@ -30,12 +34,17 @@ all:
           # Hosts docker; provision-lxc.yml will set
           # `lxc.apparmor.profile: unconfined` on the CT.
           lxc_docker_host: true
+
         uptime-kuma:
           ctid: 103
           ansible_host: 192.168.88.103
           memory: 256
           disk: 4
           cores: 1
+          # Hosts docker; provision-lxc.yml will set
+          # `lxc.apparmor.profile: unconfined` on the CT.
+          lxc_docker_host: true
+
         homepage:
           ctid: 104
           ansible_host: 192.168.88.104
@@ -47,26 +56,35 @@ all:
           # the browser might send: LAN IP:port for direct access, plus the
           # public hostname when fronted by nginx-proxy.
           homepage_allowed_hosts: "homepage.jancic.website,192.168.88.104:3000"
+
         stirling-pdf:
           ctid: 105
-          # .107 not .105 — preserved from the original bash script
-          ansible_host: 192.168.88.107
+          ansible_host: 192.168.88.105
           memory: 256
           disk: 4
           cores: 1
-        pi-hole-from-scratch:
-          ctid: 111
-          ansible_host: 192.168.88.111
-          memory: 256
-          disk: 4
-          cores: 1
+
+    nginx-proxy:
+      hosts:
+        nginx-proxy:
+
     pihole:
       hosts:
         pi-hole:
-        pi-hole-from-scratch:
+
     vaultwarden:
       hosts:
         vaultwarden:
+
+    uptime-kuma:
+      hosts:
+        uptime-kuma:
+
     homepage:
       hosts:
         homepage:
+
+    stirling-pdf:
+      hosts:
+        stirling-pdf:
+

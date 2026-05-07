@@ -1,0 +1,12 @@
+---
+# Pin a specific image tag — `latest` would silently roll the monitor on
+# every `docker compose up -d`. Bump deliberately after reviewing release
+# notes at https://github.com/louislam/uptime-kuma/releases.
+uptime_kuma_image: "louislam/uptime-kuma:2.3.2"
+
+uptime_kuma_install_dir: /opt/uptime-kuma
+uptime_kuma_data_dir: /opt/uptime-kuma/data
+
+# 3001 is uptime-kuma's default; unprivileged so no LXC port-binding pain.
+# nginx-proxy CT will reverse-proxy 80/443 → here.
+uptime_kuma_host_port: 3001

@@ -36,6 +36,7 @@ playbooks/
   configure-pihole.yml               install (if missing) + web admin password
   configure-vaultwarden.yml          install docker + run vaultwarden compose stack
   configure-homepage.yml             install docker + run homepage compose stack
+  configure-uptime-kuma.yml          install docker + run uptime-kuma compose stack
 roles/docker/
   tasks/main.yml                     docker CE + compose plugin from upstream apt repo
 roles/pihole/
@@ -54,6 +55,13 @@ roles/homepage/
   meta/main.yml                      depends on `docker` role
   tasks/main.yml + tasks/deploy.yml  render compose -> `docker compose up -d`
   templates/docker-compose.yml.j2    single-service compose, /app/config bind-mount
+  templates/{settings,services,bookmarks,widgets}.yaml.j2
+                                     curated dashboard config rendered from inventory
+roles/uptime-kuma/
+  defaults/main.yml                  pinned image, paths, port
+  meta/main.yml                      depends on `docker` role
+  tasks/main.yml + tasks/deploy.yml  render compose -> `docker compose up -d`
+  templates/docker-compose.yml.j2    single-service compose, /app/data bind-mount
 requirements.yml                     ansible collection deps
 ```
 
@@ -151,6 +159,23 @@ ansible-playbook playbooks/configure-homepage.yml
 
 Runs against the `homepage` group. Same shape as vaultwarden — depends on
 `roles/docker/`, renders compose, runs `docker compose up -d`. Reach the
+dashboard at `http://<homepage-ip>:3000/`. The role also templates
+`settings.yaml`, `services.yaml`, `bookmarks.yaml`, and `widgets.yaml` from
+inventory; edit the templates under `roles/homepage/templates/`, not the
+rendered files on the CT (Ansible owns them).
+
+### Install + configure uptime-kuma
+
+```
+ansible-playbook playbooks/configure-uptime-kuma.yml
+```
+
+Runs against the `uptime-kuma` group. Same shape — depends on
+`roles/docker/`, renders compose, runs `docker compose up -d`. Reach the
+monitor at `http://<uptime-kuma-ip>:3001/` and complete the first-run
+admin setup in the browser (uptime-kuma stores credentials in its sqlite
+db, no env vars or secrets to template).
+=======
 dashboard at `http://<homepage-ip>:3000/`. Edit YAML files under
 `/opt/homepage/config/` on the CT to add services, bookmarks, widgets.
 
