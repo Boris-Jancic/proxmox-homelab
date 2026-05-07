@@ -1,0 +1,17 @@
+# Managed by Ansible (roles/homepage/templates/bookmarks.yaml.j2).
+
+- Repo:
+    - Homelab IaC:
+        - href: https://github.com/Boris-Jancic/proxmox-homelab
+          icon: github.png
+          description: This homelab's Ansible repo
+
+- Admin:
+    - Proxmox:
+        - href: https://{{ hostvars['pve'].ansible_host }}:8006/
+          icon: proxmox.png
+          description: PVE node UI
+    - Pi-hole admin:
+        - href: http://{{ hostvars['pi-hole'].ansible_host }}/admin
+          icon: pi-hole.png
+          description: DNS + ad-block console
