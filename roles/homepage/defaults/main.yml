@@ -1,0 +1,17 @@
+---
+# Pin a specific image tag — `latest` would silently roll the dashboard image
+# on every `docker compose up -d`. Bump deliberately after reviewing release
+# notes at https://github.com/gethomepage/homepage/releases.
+homepage_image: "ghcr.io/gethomepage/homepage:v1.12.3"
+
+homepage_install_dir: /opt/homepage
+homepage_config_dir: /opt/homepage/config
+
+# 3000 is homepage's default; unprivileged so no LXC sysctl pain on the host
+# port mapping. nginx-proxy CT will reverse-proxy 80/443 → here later.
+homepage_host_port: 3000
+
+# v0.10+ rejects requests whose Host header isn't in this allow-list, so set
+# it to whatever the browser actually sends. Override once nginx-proxy
+# terminates a real hostname.
+homepage_allowed_hosts: "{{ ansible_host }}:{{ homepage_host_port }}"

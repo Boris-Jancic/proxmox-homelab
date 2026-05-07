@@ -1,0 +1,56 @@
+---
+- name: Ensure homepage install directory
+  file:
+    path: "{{ homepage_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure homepage config directory
+  file:
+    path: "{{ homepage_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# `no_log` hides the rendered HOMEPAGE_VAR_PIHOLE_KEY from ansible output.
+# Mode 0600 so only root on the CT can read the file.
+- name: Render docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ homepage_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+# Homepage hot-reloads YAML changes, so we don't need to recreate the
+# container after these. The compose-up task below only recreates when its
+# *own* inputs (image, env, mounts) change.
+- name: Render homepage config files
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ homepage_config_dir }}/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - settings.yaml
+    - services.yaml
+    - bookmarks.yaml
+    - widgets.yaml
+
+# `docker compose up -d` is itself idempotent — if nothing changed the
+# container is left alone. We surface ansible-changed only when compose
+# actually started or recreated something.
+- name: Bring homepage stack up
+  command: docker compose up -d
+  args:
+    chdir: "{{ homepage_install_dir }}"
+  register: compose_up
+  changed_when: >
+    'Started' in compose_up.stderr
+    or 'Recreated' in compose_up.stderr
+    or 'Created' in compose_up.stderr

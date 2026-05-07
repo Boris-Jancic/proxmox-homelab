@@ -1,0 +1,6 @@
+---
+- name: Install and configure homepage
+  hosts: homepage
+  gather_facts: true
+  roles:
+    - homepage

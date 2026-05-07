@@ -52,3 +52,41 @@
       loop: "{{ groups['lxc_containers'] }}"
       loop_control:
         label: "{{ hostvars[item].ctid }} {{ item }}"
+
+# Docker-in-unprivileged-LXC needs AppArmor disabled on the CT, otherwise runc
+# fails at container init writing /proc/sys/net/ipv4/ip_unprivileged_port_start
+# (and various other syscalls). Tagging a host with `lxc_docker_host: true` in
+# the inventory opts it into this override. Reduces LXC isolation — fine for a
+# homelab, not appropriate for multi-tenant.
+- name: Apply docker-host LXC overrides
+  hosts: pve
+  gather_facts: false
+
+  tasks:
+    - name: Ensure AppArmor unconfined for docker-host CTs
+      ansible.builtin.lineinfile:
+        path: "/etc/pve/lxc/{{ hostvars[item].ctid }}.conf"
+        line: "lxc.apparmor.profile: unconfined"
+        state: present
+      loop: "{{ groups['lxc_containers'] }}"
+      when: hostvars[item].lxc_docker_host | default(false) | bool
+      register: docker_host_overrides
+      loop_control:
+        label: "{{ hostvars[item].ctid }} {{ item }}"
+
+    # AppArmor profile is read at CT start, so any CT that was already running
+    # when the line was added still has the old profile in memory. Reboot only
+    # the ones whose conf actually changed; skip stopped CTs (they'll pick up
+    # the new profile on next start anyway).
+    - name: Reboot docker-host CTs whose AppArmor profile changed
+      ansible.builtin.shell: |
+        if pct status {{ hostvars[item.item].ctid }} | grep -q running; then
+          pct reboot {{ hostvars[item.item].ctid }}
+        fi
+      loop: "{{ docker_host_overrides.results }}"
+      when:
+        - not (item.skipped | default(false))
+        - item.changed | default(false)
+      loop_control:
+        label: "{{ hostvars[item.item].ctid }} {{ item.item }}"
+      changed_when: true

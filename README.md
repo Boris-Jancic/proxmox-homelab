@@ -11,6 +11,13 @@ configuration.
   networking, root SSH key.
 - **Pi-hole (v6+)** — installs the package when missing, then enforces the
   web admin password.
+- **Vaultwarden** — installs Docker + the compose plugin, then runs
+  `vaultwarden/server` from a pinned image with bind-mounted data.
+- **Homepage** — installs Docker + the compose plugin, then runs
+  `gethomepage/homepage` with a bind-mounted config dir.
+- **Docker engine** — shared `docker` role pulled in by any service role that
+  needs it (vaultwarden, homepage, …). Ansible deduplicates the dependency
+  within a play, so listing it from multiple roles is free.
 
 Everything else — the Nextcloud-AIO Ubuntu VM, the internals of the other
 service CTs — is still manual.
@@ -19,7 +26,7 @@ service CTs — is still manual.
 
 ```
 ansible.cfg                          inventory + roles_path config
-inventory.yml                        pve host + lxc_containers + pihole groups
+inventory.yml                        pve host + lxc_containers + service groups
 group_vars/all/
   main.yml                           shared vars (template, gateway, ssh pubkey lookup)
   secrets.yml.example                template -> copy to secrets.yml (gitignored)
@@ -168,6 +175,9 @@ Runs against the `uptime-kuma` group. Same shape — depends on
 monitor at `http://<uptime-kuma-ip>:3001/` and complete the first-run
 admin setup in the browser (uptime-kuma stores credentials in its sqlite
 db, no env vars or secrets to template).
+=======
+dashboard at `http://<homepage-ip>:3000/`. Edit YAML files under
+`/opt/homepage/config/` on the CT to add services, bookmarks, widgets.
 
 ### Docker-in-LXC: AppArmor override
 
@@ -250,8 +260,10 @@ The excludes protect your gitignored secrets and local git history.
 - **No vault.** `secrets.yml` is plain YAML on disk. Encrypt with
   `ansible-vault encrypt group_vars/all/secrets.yml` before pushing the repo
   anywhere public.
-- **Other services** (nginx-proxy, vaultwarden, uptime-kuma, homepage,
-  stirling-pdf) have CTs but no roles — internal config is manual.
+- **Other services** (nginx-proxy, uptime-kuma, stirling-pdf) have CTs but no
+  roles yet — internal config is manual.
+- **Vaultwarden ADMIN_TOKEN is plaintext** in the rendered compose file. The
+  upstream-recommended `argon2` hash form would be preferable; not done yet.
 - **`community.general.proxmox` is deprecated** in favor of
   `community.proxmox`. The collection still works but a migration is on the
   near-term TODO.
