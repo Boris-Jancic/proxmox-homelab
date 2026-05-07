@@ -33,6 +33,7 @@ all:
           memory: 256
           disk: 4
           cores: 1
+          lxc_docker_host: true
         homepage:
           ctid: 104
           ansible_host: 192.168.88.104

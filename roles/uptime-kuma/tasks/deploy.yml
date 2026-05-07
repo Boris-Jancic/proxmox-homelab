@@ -1,0 +1,37 @@
+---
+- name: Ensure uptime-kuma install directory
+  file:
+    path: "{{ uptime_kuma_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure uptime-kuma data directory
+  file:
+    path: "{{ uptime_kuma_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Render docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ uptime_kuma_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+# `docker compose up -d` is itself idempotent — if nothing changed the
+# container is left alone. We surface ansible-changed only when compose
+# actually started or recreated something.
+- name: Bring uptime-kuma stack up
+  command: docker compose up -d
+  args:
+    chdir: "{{ uptime_kuma_install_dir }}"
+  register: compose_up
+  changed_when: >
+    'Started' in compose_up.stderr
+    or 'Recreated' in compose_up.stderr
+    or 'Created' in compose_up.stderr

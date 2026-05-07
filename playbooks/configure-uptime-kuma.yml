@@ -1,0 +1,6 @@
+---
+- name: Install and configure uptime-kuma
+  hosts: uptime-kuma
+  gather_facts: true
+  roles:
+    - uptime-kuma
