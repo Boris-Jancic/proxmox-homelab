@@ -42,14 +42,11 @@ server {
 {% endif %}
 
         proxy_set_header Host $host;
-        # $remote_addr resolves to CF-Connecting-IP for tunnel traffic via
-        # the realip module (see /etc/nginx/conf.d/proxy-headers.conf).
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        # Use the upstream's X-Forwarded-Proto when present (cloudflared
-        # terminates TLS at the edge and tells us via the header), else the
-        # local listener's scheme. Without this, Proxmox + Nextcloud-AIO
-        # admin set Secure cookies that the browser then refuses to send.
+        # Honour upstream's X-Forwarded-Proto when present, else local scheme.
+        # Without this, Proxmox + Nextcloud-AIO admin set Secure cookies the
+        # browser then refuses to send.
         proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
 
         # Websocket upgrade — needed for Proxmox noVNC console, Vaultwarden

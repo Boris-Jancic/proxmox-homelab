@@ -17,12 +17,10 @@ all:
           memory: 256
           disk: 4
           cores: 1
-          # Reverse-proxy vhost list. Public hostnames are fronted by
-          # Cloudflare Tunnel (TLS terminated at the edge), so most entries
-          # are HTTP-only here. ssl: true terminates TLS locally; the cert
-          # files must already exist (this role does not run certbot).
-          # backend_ssl: true forces proxy_ssl_verify off for self-signed
-          # upstreams (Proxmox 8006, Nextcloud-AIO admin :8080).
+          # Reverse-proxy vhost list. ssl: true terminates TLS locally;
+          # the cert files must already exist (this role does not run
+          # certbot). backend_ssl: true forces proxy_ssl_verify off for
+          # self-signed upstreams (Proxmox 8006, Nextcloud-AIO admin :8080).
           # Domains are templated from `cloudflare_zone` in
           # group_vars/all/main.yml so a zone change is one-line.
           nginx_proxy_hosts:

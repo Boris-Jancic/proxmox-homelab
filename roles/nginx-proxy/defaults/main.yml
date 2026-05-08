@@ -11,14 +11,6 @@ nginx_client_max_body_size: 10G
 # websockets without dropping idle connections (24h).
 nginx_proxy_read_timeout: 86400
 
-# Sources nginx will trust for `CF-Connecting-IP` real-client-IP resolution
-# and inbound `X-Forwarded-Proto` headers. Default covers cloudflared
-# running on the same CT (loopback). Add LAN IPs here if you ever chain a
-# different upstream proxy in front.
-nginx_real_ip_from:
-  - 127.0.0.1
-  - "::1"
-
 # Per-host: list of vhosts to render. Set on the nginx-proxy host in
 # inventory.yml. Schema (per entry):
 #   name           required   used for filenames; lowercase, no spaces

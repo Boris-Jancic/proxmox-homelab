@@ -33,9 +33,6 @@ network_prefix: "/24"
 controller_ssh_pubkey_path: "~/.ssh/id_ed25519.pub"
 controller_ssh_pubkey: "{{ lookup('file', controller_ssh_pubkey_path) }}"
 
-# Cloudflare. `cloudflare_zone` is reused throughout inventory.yml — adding
-# a public vhost only needs the subdomain, e.g. `cloud.{{ cloudflare_zone }}`.
-# `cloudflared_tunnel_id` derives from the credentials JSON in secrets.yml
-# so the UUID is defined exactly once.
+# Public DNS zone. Reused throughout inventory.yml — adding a vhost only
+# needs the subdomain, e.g. `cloud.{{ cloudflare_zone }}`.
 cloudflare_zone: "jancic.website"
-cloudflared_tunnel_id: "{{ cloudflared_tunnel_credentials.TunnelID }}"
