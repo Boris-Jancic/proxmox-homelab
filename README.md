@@ -295,6 +295,7 @@ create the CNAME for that hostname, or gate it with a Cloudflare Access
 policy (Zero Trust dashboard → Access → Applications). This role doesn't
 currently model "proxy via nginx but skip the tunnel" — extend
 `config.yml.j2` with a per-host `tunnel: false` flag if you need it.
+=======
 
 ### Docker-in-LXC: AppArmor override
 

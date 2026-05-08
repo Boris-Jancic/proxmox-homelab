@@ -108,10 +108,6 @@ all:
       hosts:
         nginx-proxy:
 
-    cloudflared:
-      hosts:
-        nginx-proxy:
-
     pihole:
       hosts:
         pi-hole:
