@@ -17,6 +17,51 @@ all:
           memory: 256
           disk: 4
           cores: 1
+          # Reverse-proxy vhost list. ssl: true terminates TLS locally;
+          # the cert files must already exist (this role does not run
+          # certbot). backend_ssl: true forces proxy_ssl_verify off for
+          # self-signed upstreams (Proxmox 8006, Nextcloud-AIO admin :8080).
+          # Domains are templated from `cloudflare_zone` in
+          # group_vars/all/main.yml so a zone change is one-line.
+          nginx_proxy_hosts:
+            - name: cloud
+              domain: "cloud.{{ cloudflare_zone }}"
+              destination: http://192.168.88.110:11000
+              ssl: false
+
+            - name: homepage
+              domain: "homepage.{{ cloudflare_zone }}"
+              destination: http://192.168.88.104:3000
+              ssl: false
+
+            - name: kuma
+              domain: "kuma.{{ cloudflare_zone }}"
+              destination: http://192.168.88.103:3001
+              ssl: false
+
+            - name: nextcloud
+              domain: "nextcloud.{{ cloudflare_zone }}"
+              destination: https://192.168.88.110:8080
+
+            - name: pihole
+              domain: "pihole.{{ cloudflare_zone }}"
+              destination: http://192.168.88.101:80
+              ssl: false
+              # Pi-hole's UI is mounted at /admin/, not /. Without this,
+              # the bare domain would land on a 403/blank.
+              redirect_root_to: /admin/
+
+            - name: proxmox
+              domain: "proxmox.{{ cloudflare_zone }}"
+              destination: https://192.168.88.10:8006
+              ssl: false
+              backend_ssl: true
+
+            - name: vaultwarden
+              domain: "vaultwarden.{{ cloudflare_zone }}"
+              destination: http://192.168.88.102:8080
+              ssl: false
+
 
         pi-hole:
           ctid: 101
@@ -55,14 +100,7 @@ all:
           # Host header allow-list for homepage v0.10+. Include every name
           # the browser might send: LAN IP:port for direct access, plus the
           # public hostname when fronted by nginx-proxy.
-          homepage_allowed_hosts: "homepage.jancic.website,192.168.88.104:3000"
-
-        stirling-pdf:
-          ctid: 105
-          ansible_host: 192.168.88.105
-          memory: 256
-          disk: 4
-          cores: 1
+          homepage_allowed_hosts: "homepage.{{ cloudflare_zone }},192.168.88.104:3000"
 
     nginx-proxy:
       hosts:
@@ -83,8 +121,4 @@ all:
     homepage:
       hosts:
         homepage:
-
-    stirling-pdf:
-      hosts:
-        stirling-pdf:
 

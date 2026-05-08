@@ -1,0 +1,27 @@
+---
+# Debian convention; nginx.conf already includes /etc/nginx/sites-enabled/*.
+nginx_sites_available: /etc/nginx/sites-available
+nginx_sites_enabled: /etc/nginx/sites-enabled
+
+# 10G covers Nextcloud chunked uploads + any sane attachment workflow.
+# Tune down if you don't run file storage behind the proxy.
+nginx_client_max_body_size: 10G
+
+# Long enough for noVNC / Proxmox console + Vaultwarden live-sync over
+# websockets without dropping idle connections (24h).
+nginx_proxy_read_timeout: 86400
+
+# Per-host: list of vhosts to render. Set on the nginx-proxy host in
+# inventory.yml. Schema (per entry):
+#   name           required   used for filenames; lowercase, no spaces
+#   domain         required   server_name value
+#   destination    required   proxy_pass target (http:// or https://)
+#   ssl            optional   terminate TLS locally on :443 (requires
+#                             ssl_cert + ssl_key); auto-redirects :80 → :443
+#   ssl_cert,      required   when ssl: true. Files must exist; this role
+#   ssl_key                   does not manage certbot.
+#   backend_ssl    optional   force proxy_ssl_verify off (set when the
+#                             upstream is HTTPS with a self-signed cert)
+#   redirect_root_to optional 301 from / to a subpath (e.g. /admin/)
+#   extra_config   optional   raw nginx directives appended in `location /`
+nginx_proxy_hosts: []

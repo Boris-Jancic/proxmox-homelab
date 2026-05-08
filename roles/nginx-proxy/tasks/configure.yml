@@ -1,0 +1,86 @@
+---
+- name: Render http-context proxy headers snippet
+  template:
+    src: proxy-headers.conf.j2
+    dest: /etc/nginx/conf.d/proxy-headers.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload nginx
+
+# Stat ssl_cert path for every ssl:true vhost. Missing certs (letsencrypt
+# not yet issued, manual copy not done, etc.) would crash nginx -t and
+# block the entire reload. Auto-skip those vhosts; resume on next run
+# once the cert exists. Non-ssl vhosts are always rendered.
+- name: Detect missing SSL certs for ssl:true vhosts
+  stat:
+    path: "{{ item.ssl_cert }}"
+  loop: "{{ nginx_proxy_hosts }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: item.ssl | default(false)
+  register: nginx_cert_stats
+
+- name: Compute skipped vhosts (ssl:true with no cert on disk)
+  set_fact:
+    nginx_skipped_hosts: >-
+      {{ nginx_cert_stats.results
+         | selectattr('skipped', 'undefined')
+         | rejectattr('stat.exists')
+         | map(attribute='item.name')
+         | list }}
+
+- name: Compute active vhost names
+  set_fact:
+    nginx_active_host_names: >-
+      {{ nginx_proxy_hosts
+         | map(attribute='name')
+         | difference(nginx_skipped_hosts)
+         | list }}
+
+- name: Warn about skipped vhosts
+  debug:
+    msg: "Skipping vhost '{{ item }}' — ssl_cert missing on disk. Will render once it exists."
+  loop: "{{ nginx_skipped_hosts }}"
+  when: nginx_skipped_hosts | length > 0
+
+- name: Render vhost configs
+  template:
+    src: vhost.conf.j2
+    dest: "{{ nginx_sites_available }}/{{ item.name }}.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ nginx_proxy_hosts }}"
+  loop_control:
+    label: "{{ item.name }} ({{ item.domain }})"
+  when: item.name in nginx_active_host_names
+  notify: Reload nginx
+
+- name: Enable vhosts (symlink into sites-enabled)
+  file:
+    src: "{{ nginx_sites_available }}/{{ item.name }}.conf"
+    dest: "{{ nginx_sites_enabled }}/{{ item.name }}.conf"
+    state: link
+  loop: "{{ nginx_proxy_hosts }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: item.name in nginx_active_host_names
+  notify: Reload nginx
+
+# Drift cleanup: remove anything in sites-enabled/ we don't manage. Catches
+# Debian's `default` symlink, any vhost removed from nginx_proxy_hosts, and
+# any previously-enabled vhost that's now skipped due to missing cert.
+- name: List currently enabled vhosts
+  find:
+    paths: "{{ nginx_sites_enabled }}"
+    file_type: any
+  register: enabled_files
+
+
+# Validate the full config tree before flush_handlers fires the reload. If
+# this fails, the broken vhost is on disk but nginx is still running its
+# previous config — fix the inventory and re-run.
+- name: Validate nginx config
+  command: nginx -t
+  changed_when: false

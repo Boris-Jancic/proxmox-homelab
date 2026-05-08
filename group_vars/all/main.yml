@@ -1,27 +1,38 @@
+# Non-secret defaults shared across plays.
+# Companion file: group_vars/all/secrets.yml (gitignored, vaulted in prod).
+# An example with the same variable names lives at secrets.yml.example.
+
+# Proxmox API connection
 proxmox_api_host: "127.0.0.1"
 proxmox_api_port: 8006
-
-# proxmox_api_user: "root@pam!ansible-token"
-# proxmox_api_token_id: "{{ secret_proxmox_api_token_id }}"
-# proxmox_api_token_secret: "{{ secret_proxmox_api_token_secret }}"
-
-proxmox_api_user: "{{ secret_proxmox_api_user }}"
-proxmox_api_password: "{{ secret_proxmox_api_user_password }}"
-lxc_root_password: "{{ secret_lxc_root_password }}"
-
-proxmox_template_vmid: 799
-proxmox_storage: "local-lvm"
-
 proxmox_node: pve
 
-network_gateway: 192.168.88.1
-network_prefix: "/24"
+# Password auth (current path — community.proxmox + LXC + local storage
+# breaks under token auth; see README "Known Gotchas"). The password
+# itself lives in secrets.yml as `proxmox_api_password`.
+proxmox_api_user: "root@pam"
 
+# Token auth alternative (uncomment + add proxmox_api_token_id /
+# proxmox_api_token_secret to secrets.yml when the LXC issue is fixed
+# upstream and you want to stop bouncing the root password through plays).
+# proxmox_api_user: "root@pam!ansible-token"
+
+# LXC defaults
+proxmox_template_vmid: 799
+proxmox_storage: "local-lvm"
 lxc_template: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
 lxc_storage: local-lvm
 lxc_swap: 256
+
+# Network
+network_gateway: 192.168.88.1
+network_prefix: "/24"
 
 # Read controller's SSH public key from disk so it gets baked into new LXCs
 # at create time. Override the path here if you use rsa or a different file.
 controller_ssh_pubkey_path: "~/.ssh/id_ed25519.pub"
 controller_ssh_pubkey: "{{ lookup('file', controller_ssh_pubkey_path) }}"
+
+# Public DNS zone. Reused throughout inventory.yml — adding a vhost only
+# needs the subdomain, e.g. `cloud.{{ cloudflare_zone }}`.
+cloudflare_zone: "jancic.website"

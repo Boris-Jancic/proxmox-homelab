@@ -5,11 +5,7 @@
   register: pihole_bin
 
 - name: Install pi-hole if missing
-<<<<<<< Updated upstream
-  include_tasks: task_install_pihole.yml
-=======
   include_tasks: install.yml
->>>>>>> Stashed changes
   when: not pihole_bin.stat.exists
 
 - name: Verify pihole.toml is present (v6+)
@@ -21,13 +17,6 @@
   fail:
     msg: "pihole.toml not found — install may have failed, or this is a pre-v6 install."
   when: not pihole_toml.stat.exists
-<<<<<<< Updated upstream
-
-- name: Manage web admin password
-  include_tasks: task_password_sync.yml
-
-=======
 
 - name: Manage web admin password
   include_tasks: password.yml
->>>>>>> Stashed changes

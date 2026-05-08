@@ -1,0 +1,13 @@
+# Managed by Ansible (roles/nginx-proxy/templates/proxy-headers.conf.j2).
+# Edits here are overwritten on next playbook run.
+#
+# Lives in /etc/nginx/conf.d/ which Debian's nginx.conf includes inside the
+# http {} block — `map` directives belong there.
+
+# Trust X-Forwarded-Proto from any upstream proxy that already terminated
+# TLS. Falls back to $scheme when the header isn't set, so direct LAN access
+# still works.
+map $http_x_forwarded_proto $proxy_x_forwarded_proto {
+    default $http_x_forwarded_proto;
+    ''      $scheme;
+}
