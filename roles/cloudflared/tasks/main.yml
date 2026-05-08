@@ -1,6 +1,0 @@
----
-- name: Install cloudflared
-  include_tasks: install.yml
-
-- name: Configure cloudflared tunnel
-  include_tasks: configure.yml

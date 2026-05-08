@@ -39,15 +39,6 @@
     file_type: any
   register: enabled_files
 
-- name: Remove unmanaged vhosts from sites-enabled
-  file:
-    path: "{{ item.path }}"
-    state: absent
-  loop: "{{ enabled_files.files }}"
-  when: (item.path | basename | regex_replace('\\.conf$', '')) not in (nginx_proxy_hosts | map(attribute='name') | list)
-  loop_control:
-    label: "{{ item.path | basename }}"
-  notify: Reload nginx
 
 # Validate the full config tree before flush_handlers fires the reload. If
 # this fails, the broken vhost is on disk but nginx is still running its

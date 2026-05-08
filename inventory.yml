@@ -44,9 +44,6 @@ all:
             - name: nextcloud
               domain: "nextcloud.{{ cloudflare_zone }}"
               destination: https://192.168.88.110:8080
-              ssl: true
-              ssl_cert: "/etc/letsencrypt/live/nextcloud.{{ cloudflare_zone }}/fullchain.pem"
-              ssl_key: "/etc/letsencrypt/live/nextcloud.{{ cloudflare_zone }}/privkey.pem"
 
             - name: pihole
               domain: "pihole.{{ cloudflare_zone }}"
@@ -66,6 +63,7 @@ all:
               domain: "vaultwarden.{{ cloudflare_zone }}"
               destination: http://192.168.88.102:8080
               ssl: false
+
 
         pi-hole:
           ctid: 101
