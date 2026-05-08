@@ -1,0 +1,54 @@
+---
+- name: Ensure cloudflared config directory
+  file:
+    path: "{{ cloudflared_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Write tunnel credentials
+  copy:
+    content: "{{ cloudflared_tunnel_credentials | to_nice_json }}"
+    dest: "{{ cloudflared_config_dir }}/{{ cloudflared_tunnel_id }}.json"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: Restart cloudflared
+
+- name: Render cloudflared config
+  template:
+    src: config.yml.j2
+    dest: "{{ cloudflared_config_dir }}/config.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart cloudflared
+
+# We ship our own systemd unit instead of `cloudflared service install` —
+# that command is interactive-ish and inspects state we'd rather control
+# explicitly here.
+- name: Render cloudflared systemd unit
+  template:
+    src: cloudflared.service.j2
+    dest: /etc/systemd/system/cloudflared.service
+    owner: root
+    group: root
+    mode: "0644"
+  register: cloudflared_unit
+
+- name: Reload systemd if unit changed
+  systemd:
+    daemon_reload: true
+  when: cloudflared_unit.changed
+
+- name: Validate ingress rules before enabling the service
+  command: cloudflared --config {{ cloudflared_config_dir }}/config.yml tunnel ingress validate
+  changed_when: false
+
+- name: Ensure cloudflared service is enabled and running
+  systemd:
+    name: cloudflared
+    enabled: true
+    state: started

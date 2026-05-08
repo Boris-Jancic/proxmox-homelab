@@ -49,18 +49,13 @@
         #   url: http://{{ hostvars['uptime-kuma'].ansible_host }}:3001
         #   slug: <status-page-slug>
 
-    - Stirling PDF:
-        href: http://{{ hostvars['stirling-pdf'].ansible_host }}:8080/
-        description: PDF tools
-        icon: stirling-pdf.png
-
 - Storage:
     - Nextcloud:
         # Update once the AIO VM is on the network and you know its IP.
-        href: https://nextcloud.jancic.website/
+        href: https://nextcloud.{{ cloudflare_zone }}/
         description: File storage + sync
         icon: nextcloud.png
         # widget:
         #   type: nextcloud
-        #   url: https://nextcloud.jancic.website
+        #   url: https://nextcloud.{{ cloudflare_zone }}
         #   key: '{% raw %}{{HOMEPAGE_VAR_NEXTCLOUD_KEY}}{% endraw %}'

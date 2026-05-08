@@ -1,0 +1,23 @@
+# Managed by Ansible (roles/nginx-proxy/templates/proxy-headers.conf.j2).
+# Edits here are overwritten on next playbook run.
+#
+# Lives in /etc/nginx/conf.d/ which Debian's nginx.conf includes inside the
+# http {} block — `map` and `set_real_ip_from` both belong there.
+
+# Trust X-Forwarded-Proto from any upstream proxy that already terminated
+# TLS (cloudflared on the same CT, or any other reverse proxy chained in
+# front). Falls back to $scheme when the header isn't set, so direct LAN
+# access still works.
+map $http_x_forwarded_proto $proxy_x_forwarded_proto {
+    default $http_x_forwarded_proto;
+    ''      $scheme;
+}
+
+# Resolve the real client IP from CF-Connecting-IP when the request comes
+# from a trusted source. Without this, $remote_addr is the cloudflared
+# process IP (typically 127.0.0.1) and every backend sees all traffic as
+# originating locally.
+{% for trusted in nginx_real_ip_from %}
+set_real_ip_from {{ trusted }};
+{% endfor %}
+real_ip_header CF-Connecting-IP;

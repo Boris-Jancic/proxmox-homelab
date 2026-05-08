@@ -1,0 +1,57 @@
+---
+- name: Render http-context proxy headers snippet
+  template:
+    src: proxy-headers.conf.j2
+    dest: /etc/nginx/conf.d/proxy-headers.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Render vhost configs
+  template:
+    src: vhost.conf.j2
+    dest: "{{ nginx_sites_available }}/{{ item.name }}.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ nginx_proxy_hosts }}"
+  loop_control:
+    label: "{{ item.name }} ({{ item.domain }})"
+  notify: Reload nginx
+
+- name: Enable vhosts (symlink into sites-enabled)
+  file:
+    src: "{{ nginx_sites_available }}/{{ item.name }}.conf"
+    dest: "{{ nginx_sites_enabled }}/{{ item.name }}.conf"
+    state: link
+  loop: "{{ nginx_proxy_hosts }}"
+  loop_control:
+    label: "{{ item.name }}"
+  notify: Reload nginx
+
+# Drift cleanup: remove anything in sites-enabled/ we don't manage. Catches
+# Debian's `default` symlink and any vhost that was once in
+# nginx_proxy_hosts but has since been removed.
+- name: List currently enabled vhosts
+  find:
+    paths: "{{ nginx_sites_enabled }}"
+    file_type: any
+  register: enabled_files
+
+- name: Remove unmanaged vhosts from sites-enabled
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ enabled_files.files }}"
+  when: (item.path | basename | regex_replace('\\.conf$', '')) not in (nginx_proxy_hosts | map(attribute='name') | list)
+  loop_control:
+    label: "{{ item.path | basename }}"
+  notify: Reload nginx
+
+# Validate the full config tree before flush_handlers fires the reload. If
+# this fails, the broken vhost is on disk but nginx is still running its
+# previous config — fix the inventory and re-run.
+- name: Validate nginx config
+  command: nginx -t
+  changed_when: false

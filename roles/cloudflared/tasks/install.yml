@@ -1,0 +1,35 @@
+---
+# Cloudflare's apt repo. Mirror the docker role's pattern for the keyring.
+
+- name: Install cloudflared apt prerequisites
+  apt:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+    update_cache: true
+
+- name: Ensure /etc/apt/keyrings exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Fetch Cloudflare apt GPG key
+  get_url:
+    url: https://pkg.cloudflare.com/cloudflare-main.gpg
+    dest: /etc/apt/keyrings/cloudflare-main.gpg
+    mode: "0644"
+    force: false
+
+- name: Add Cloudflare apt repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared {{ ansible_distribution_release }} main"
+    state: present
+    filename: cloudflared
+
+- name: Install cloudflared
+  apt:
+    name: cloudflared
+    state: present
+    update_cache: true

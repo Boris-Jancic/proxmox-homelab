@@ -1,0 +1,29 @@
+# Managed by Ansible (roles/cloudflared/templates/config.yml.j2).
+# Edits here are overwritten on next playbook run.
+
+tunnel: {{ cloudflared_tunnel_id }}
+credentials-file: {{ cloudflared_config_dir }}/{{ cloudflared_tunnel_id }}.json
+
+# Defaults for every ingress rule below; per-rule originRequest blocks
+# inherit and can override.
+originRequest:
+  connectTimeout: 30s
+  noHappyEyeballs: false
+
+ingress:
+{% for host in nginx_proxy_hosts %}
+  - hostname: {{ host.domain }}
+{%   if host.ssl | default(false) %}
+    # Local nginx terminates TLS for this hostname; talk HTTPS to it and
+    # set SNI so the right cert is selected and validated.
+    service: https://localhost:443
+    originRequest:
+      originServerName: {{ host.domain }}
+{%   else %}
+    service: http://localhost:80
+{%   endif %}
+{% endfor %}
+
+  # Required catch-all. Any hostname that resolves to this tunnel but
+  # isn't matched above gets a quiet 404.
+  - service: http_status:404

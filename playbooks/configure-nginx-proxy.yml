@@ -1,0 +1,6 @@
+---
+- name: Install and configure nginx-proxy
+  hosts: nginx-proxy
+  gather_facts: true
+  roles:
+    - nginx-proxy

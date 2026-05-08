@@ -1,0 +1,6 @@
+---
+- name: Install and configure cloudflared tunnel
+  hosts: cloudflared
+  gather_facts: true
+  roles:
+    - cloudflared

@@ -6,8 +6,8 @@ configuration.
 
 ## What this manages
 
-- **LXC containers** — 7 CTs (nginx-proxy, pi-hole, vaultwarden, uptime-kuma,
-  homepage, stirling-pdf, plus a `pi-hole-from-scratch` test CT). Creation,
+- **LXC containers** — 6 CTs (nginx-proxy, pi-hole, vaultwarden, uptime-kuma,
+  homepage, plus a `pi-hole-from-scratch` test CT). Creation,
   networking, root SSH key.
 - **Pi-hole (v6+)** — installs the package when missing, then enforces the
   web admin password.
@@ -15,12 +15,22 @@ configuration.
   `vaultwarden/server` from a pinned image with bind-mounted data.
 - **Homepage** — installs Docker + the compose plugin, then runs
   `gethomepage/homepage` with a bind-mounted config dir.
+- **Uptime Kuma** — installs Docker + the compose plugin, then runs
+  `louislam/uptime-kuma` with a bind-mounted data dir.
+- **nginx-proxy** — installs nginx (bare-metal, no Docker), then renders one
+  reverse-proxy vhost per entry in `nginx_proxy_hosts` and takes full
+  ownership of `sites-enabled/`. Also drops a small `proxy-headers.conf`
+  http-context snippet that resolves real client IP from `CF-Connecting-IP`
+  and trusts `X-Forwarded-Proto` from upstream proxies.
+- **cloudflared** — installs Cloudflare's tunnel daemon on the same CT as
+  nginx-proxy, templates an ingress rule per `nginx_proxy_hosts` entry
+  routing each public hostname to local nginx, and ships a systemd unit.
+  Single ingress, fans out by `Host:` header through nginx.
 - **Docker engine** — shared `docker` role pulled in by any service role that
-  needs it (vaultwarden, homepage, …). Ansible deduplicates the dependency
-  within a play, so listing it from multiple roles is free.
+  needs it (vaultwarden, homepage, uptime-kuma). Ansible deduplicates the
+  dependency within a play, so listing it from multiple roles is free.
 
-Everything else — the Nextcloud-AIO Ubuntu VM, the internals of the other
-service CTs — is still manual.
+The Nextcloud-AIO Ubuntu VM is still manual.
 
 ## Layout
 
@@ -37,6 +47,8 @@ playbooks/
   configure-vaultwarden.yml          install docker + run vaultwarden compose stack
   configure-homepage.yml             install docker + run homepage compose stack
   configure-uptime-kuma.yml          install docker + run uptime-kuma compose stack
+  configure-nginx-proxy.yml          install nginx + render vhosts from inventory
+  configure-cloudflared.yml          install cloudflared + render tunnel ingress
 roles/docker/
   tasks/main.yml                     docker CE + compose plugin from upstream apt repo
 roles/pihole/
@@ -62,6 +74,20 @@ roles/uptime-kuma/
   meta/main.yml                      depends on `docker` role
   tasks/main.yml + tasks/deploy.yml  render compose -> `docker compose up -d`
   templates/docker-compose.yml.j2    single-service compose, /app/data bind-mount
+roles/nginx-proxy/
+  defaults/main.yml                  body size + timeouts, vhost schema, real-ip trust list
+  tasks/main.yml + tasks/install.yml + tasks/configure.yml
+                                     install nginx, render vhosts, prune stale
+  templates/vhost.conf.j2            single template, ssl + backend_ssl knobs
+  templates/proxy-headers.conf.j2    http-context map + realip module config
+  handlers/main.yml                  reload nginx
+roles/cloudflared/
+  defaults/main.yml                  config dir + variable schema reference
+  tasks/main.yml + tasks/install.yml + tasks/configure.yml
+                                     apt repo, write credentials + config, ship unit
+  templates/config.yml.j2            ingress rules templated from nginx_proxy_hosts
+  templates/cloudflared.service.j2   systemd unit (we don't run `service install`)
+  handlers/main.yml                  restart cloudflared
 requirements.yml                     ansible collection deps
 ```
 
@@ -175,9 +201,100 @@ Runs against the `uptime-kuma` group. Same shape — depends on
 monitor at `http://<uptime-kuma-ip>:3001/` and complete the first-run
 admin setup in the browser (uptime-kuma stores credentials in its sqlite
 db, no env vars or secrets to template).
-=======
-dashboard at `http://<homepage-ip>:3000/`. Edit YAML files under
-`/opt/homepage/config/` on the CT to add services, bookmarks, widgets.
+
+### Install + configure nginx-proxy
+
+```
+ansible-playbook playbooks/configure-nginx-proxy.yml
+```
+
+Runs against the `nginx-proxy` group. Installs nginx (bare-metal — no Docker
+on this CT), renders one vhost per entry in `nginx_proxy_hosts` (set on the
+`nginx-proxy` host in `inventory.yml`) into
+`/etc/nginx/sites-available/<name>.conf`, symlinks each into
+`sites-enabled/`, validates with `nginx -t`, and reloads on change. Anything
+in `sites-enabled/` that isn't in the managed list — including Debian's
+default `default` symlink — is removed.
+
+Per-vhost schema (full reference lives in `roles/nginx-proxy/defaults/main.yml`):
+
+- `name` / `domain` / `destination` — required.
+- `ssl: true` (optional) — terminate TLS locally; needs `ssl_cert` +
+  `ssl_key`. The cert files must already exist; this role does **not**
+  manage certbot. Auto-generates a `:80 → :443` redirect.
+- `backend_ssl: true` (optional) — set when the upstream is HTTPS with a
+  self-signed cert (Proxmox 8006, Nextcloud-AIO admin :8080). Adds
+  `proxy_ssl_verify off` + `proxy_ssl_server_name on`. The role infers this
+  automatically when `destination` starts with `https://`, so the explicit
+  flag is only needed for clarity.
+- `redirect_root_to: /admin/` (optional) — 301 from `/` to a subpath. Used
+  for Pi-hole, whose UI lives at `/admin/`.
+- `extra_config` (optional) — raw nginx directives appended inside
+  `location /` for one-off needs.
+
+Defaults applied to every vhost: `client_max_body_size 10G` (Nextcloud
+chunked uploads), websocket upgrade headers, `proxy_read_timeout 86400`
+(24h — long enough for noVNC console + Vaultwarden live-sync).
+
+Public hostnames are fronted by Cloudflare Tunnel; TLS is terminated at the
+edge, so most entries can be HTTP-only here. The Nextcloud-AIO admin panel
+is the exception — it self-signs at port 8080, so we terminate locally with
+the existing letsencrypt cert and proxy upstream over HTTPS with verify off.
+
+The role also drops `/etc/nginx/conf.d/proxy-headers.conf` — an http-context
+snippet that (a) resolves real client IP from `CF-Connecting-IP` for any
+request originating from a trusted proxy (default: loopback, i.e. cloudflared
+on the same CT) and (b) preserves `X-Forwarded-Proto: https` when an upstream
+proxy already terminated TLS. Override the trust list via
+`nginx_real_ip_from` in inventory if you ever chain a different upstream.
+
+### Install + configure cloudflared
+
+```
+ansible-playbook playbooks/configure-cloudflared.yml
+```
+
+Runs against the `cloudflared` group (currently just the nginx-proxy CT —
+we co-locate cloudflared and nginx so every public hostname can fan out
+through one local ingress). Adds Cloudflare's apt repo, installs the
+`cloudflared` package, writes the tunnel credentials JSON to
+`/etc/cloudflared/<UUID>.json` (mode 0600), templates `config.yml` with one
+ingress rule per `nginx_proxy_hosts` entry, ships a systemd unit, runs
+`cloudflared tunnel ingress validate` before enabling, then starts it.
+
+**One-time setup before first run:**
+
+1. From a workstation with a browser, run `cloudflared tunnel login` to mint
+   `cert.pem`, then `cloudflared tunnel create <name>` to create the tunnel.
+   That writes `~/.cloudflared/<UUID>.json`.
+2. Copy the contents of the credentials JSON into
+   `group_vars/all/secrets.yml` as a dict at `cloudflared_tunnel_credentials`
+   (keys: `AccountTag`, `TunnelID`, `TunnelSecret`). `main.yml` reads
+   `cloudflared_tunnel_id` out of the same dict, so the UUID lives in one
+   place only.
+3. For each public hostname, create a CNAME in Cloudflare DNS pointing
+   `<hostname>.{{ cloudflare_zone }}` → `<UUID>.cfargotunnel.com`. Easiest
+   from the workstation: `cloudflared tunnel route dns <name> <hostname>`
+   per hostname. This role does **not** manage Cloudflare DNS.
+
+**Ingress rule generation:**
+
+- `ssl: false` vhost → `service: http://localhost:80` (default path).
+- `ssl: true` vhost → `service: https://localhost:443` with
+  `originServerName: <domain>` so SNI matches the local letsencrypt cert
+  and TLS verification succeeds. Without this you'd get a redirect loop
+  (cloudflared → nginx :80 → 301 → cloudflared → nginx :80 → …).
+- Catch-all returns `http_status:404` for any tunnel hostname not in the
+  list.
+
+**Security note:** every entry in `nginx_proxy_hosts` becomes a tunnel
+ingress rule. That means if Cloudflare DNS routes the hostname to your
+tunnel, it's reachable from the public internet — including pi-hole admin
+and the Proxmox web UI. If you want any of those LAN-only, either don't
+create the CNAME for that hostname, or gate it with a Cloudflare Access
+policy (Zero Trust dashboard → Access → Applications). This role doesn't
+currently model "proxy via nginx but skip the tunnel" — extend
+`config.yml.j2` with a per-host `tunnel: false` flag if you need it.
 
 ### Docker-in-LXC: AppArmor override
 
@@ -260,8 +377,6 @@ The excludes protect your gitignored secrets and local git history.
 - **No vault.** `secrets.yml` is plain YAML on disk. Encrypt with
   `ansible-vault encrypt group_vars/all/secrets.yml` before pushing the repo
   anywhere public.
-- **Other services** (nginx-proxy, uptime-kuma, stirling-pdf) have CTs but no
-  roles yet — internal config is manual.
 - **Vaultwarden ADMIN_TOKEN is plaintext** in the rendered compose file. The
   upstream-recommended `argon2` hash form would be preferable; not done yet.
 - **`community.general.proxmox` is deprecated** in favor of

@@ -8,8 +8,8 @@ vaultwarden_data_dir: /opt/vaultwarden/data
 
 # DOMAIN must match the public HTTPS URL the browser hits, otherwise
 # WebAuthn / U2F / push break (RP ID mismatch). nginx-proxy fronts this at
-# vault.jancic.website → http://192.168.88.102:8080.
-vaultwarden_domain: "https://vault.jancic.website"
+# vault.{{ cloudflare_zone }} → http://192.168.88.102:8080.
+vaultwarden_domain: "https://vault.{{ cloudflare_zone }}"
 
 # Flip to "false" after registering the first account, then re-run the role.
 vaultwarden_signups_allowed: "true"

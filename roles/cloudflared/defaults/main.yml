@@ -1,0 +1,22 @@
+---
+# Where the credentials JSON and config.yml live. cloudflared looks here by
+# default but we pass --config explicitly in the systemd unit anyway.
+cloudflared_config_dir: /etc/cloudflared
+
+# Tunnel UUID + credentials JSON.
+#   cloudflared_tunnel_credentials  — defined in group_vars/all/secrets.yml
+#                                     as a dict (AccountTag / TunnelID /
+#                                     TunnelSecret), sourced from
+#                                     ~/.cloudflared/<UUID>.json after
+#                                     `cloudflared tunnel create`.
+#   cloudflared_tunnel_id           — defined in group_vars/all/main.yml as
+#                                     `{{ cloudflared_tunnel_credentials.TunnelID }}`,
+#                                     so the UUID is never duplicated.
+# This role only requires both to be reachable from variable lookup;
+# nothing here defines them.
+
+# Ingress rules are templated from `nginx_proxy_hosts` (set on the
+# nginx-proxy host). Every entry in that list becomes one ingress rule.
+# If you want a hostname proxied by nginx but NOT exposed via cloudflared,
+# this role doesn't currently model that — strip it from nginx_proxy_hosts
+# or add a per-host `tunnel: false` flag and extend the template.
