@@ -1,0 +1,66 @@
+---
+- name: Create Virtual Machine
+  proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    node: "{{ proxmox_node }}"
+    name: "ubuntu24-{{ item }}"
+    vmid: 110
+    # newid: "{{ item }}"
+    # clone: test
+    storage: "{{storage}}"
+    state: present
+  timeout: 300 # 5m
+
+- name: Update
+  proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    node: "{{ proxmox_node }}"
+    vmid: 110
+    ipconfig:
+      ipconfig0: 'ip=192.168.88.110/24,gw=192.168.88.1'
+    update: yes
+
+- name: Start VM
+  proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    node: "{{ proxmox_node }}"
+    vmid: 110
+    state: started
+
+# - name: Retrieve information about specific VM by ID
+#   community.general.proxmox_vm_info:
+#     api_host: "{{ansible_host}}"
+#     api_user: "{{ansible_user}"
+#     api_password: "{{api_password}}"
+#     node: "{{node}}"
+#     type: qemu
+#     vmid: "{{ item }}"
+#     network: true
+#   register: vm_info
+#   retries: 2
+#   #needs a delay, VM is not UP yet, qemu agent is no accesible. Slow ssd add more delay
+#   delay: 30
+#   until: vm_info is not failed
+#
+# - name: Debug VM info
+#   debug:
+#     var: vm_info
+#
+# - name: Set fact for VM IP and hostname
+#   set_fact:
+#     vm_ip: "{{ vm_info.proxmox_vms[0].network | selectattr('name', 'equalto', 'eth0') | map(attribute='ip-addresses') | first | selectattr('ip-address-type', 'equalto', 'ipv4') | map(attribute='ip-address') | first }}"
+#     vm_hostname: "{{ vm_info.proxmox_vms[0].name }}"
+#
+# - name: Update static inventory file
+#   lineinfile:
+#     path: ../hosts
+#     line: "{{ vm_hostname }} ansible_host={{ vm_ip }}"
+#     insertafter: '\[linux\]'
+#     #create: yes
+#     state: present

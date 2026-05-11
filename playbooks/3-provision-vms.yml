@@ -1,0 +1,15 @@
+---
+- name: Deploy VMs
+  hosts: localhost
+  # vars_files:
+  #     -  ../vars/vars_node.yaml
+  #     -  ../vars/vars_hosts.yaml
+  gather_facts: yes
+  tasks:
+    - name: Deploy and Update VM linux
+      include_role:
+        name: ../roles/ubuntu/linux
+      vars:
+        newid: "{{ item }}"
+      loop: "{{ newid_values }}"
+
