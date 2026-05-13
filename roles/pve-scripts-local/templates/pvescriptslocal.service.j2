@@ -1,0 +1,14 @@
+[Unit]
+Description=PVEScriptslocal Service
+After=network.target
+
+[Service]
+WorkingDirectory={{ pve_scripts_local_install_dir }}
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+User=root
+
+[Install]
+WantedBy=multi-user.target

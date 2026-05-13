@@ -1,0 +1,19 @@
+---
+# Source repo + checkout ref. `main` tracks upstream; pin to a tag/SHA if
+# you'd rather not roll the app on every play run. There are no releases
+# tagged on community-scripts/ProxmoxVE-Local at time of writing.
+pve_scripts_local_repo: "https://github.com/community-scripts/ProxmoxVE-Local.git"
+pve_scripts_local_git_ref: "main"
+
+# Match upstream helper-script layout so manual recovery / docs line up.
+pve_scripts_local_install_dir: /opt/ProxmoxVE-Local
+
+# NodeSource major. App requires Node 22+; upstream helper uses 24.
+# Bumping major = re-run the role (re-installs nodejs apt package).
+pve_scripts_local_node_major: 22
+
+# 3000 is the app's hard-coded listen port (no env override in upstream).
+# nginx-proxy CT reverse-proxies 80/443 → here.
+pve_scripts_local_port: 3000
+
+pve_scripts_local_service_name: pvescriptslocal
