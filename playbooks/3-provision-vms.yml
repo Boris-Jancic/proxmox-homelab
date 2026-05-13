@@ -8,8 +8,8 @@
   tasks:
     - name: Deploy and Update VM linux
       include_role:
-        name: ../roles/ubuntu/linux
-      vars:
-        newid: "{{ item }}"
-      loop: "{{ newid_values }}"
-
+        name: ../roles/ubuntu
+      # vars:
+      #   newid: "{{ item }}"
+      # loop: "{{ newid_values }}"
+      #
