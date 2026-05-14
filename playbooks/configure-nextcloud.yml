@@ -1,0 +1,6 @@
+---
+- name: Install and configure Nextcloud AIO
+  hosts: ubuntu-vm1
+  gather_facts: true
+  roles:
+    - nextcloud-aio
