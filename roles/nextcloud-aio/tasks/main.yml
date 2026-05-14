@@ -1,0 +1,4 @@
+---
+# Docker is installed via the `docker` role declared in meta/main.yml.
+- name: Deploy Nextcloud AIO via docker compose
+  include_tasks: deploy.yml
