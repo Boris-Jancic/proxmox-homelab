@@ -1,7 +1,8 @@
 # Proxmox Homelab — Ansible
 
-Ansible-managed single-node Proxmox homelab. Replaces an earlier `init-all.sh`
-with idempotent playbooks for LXC provisioning and per-service configuration.
+Ansible-managed jerry-rigged single-node(for now) Proxmox homelab.
+Replaces an earlier `init-all.sh` script which provisioned my LXC's.
+As I continued to add more & more services the script balooned so I decided to make this repository to have everything managed as IaC.
 
 ## Services
 
@@ -137,7 +138,3 @@ rsync -av --delete \
   (argon2 hash form preferred; not done).
 - `community.general.proxmox` is deprecated in favor of `community.proxmox`;
   migration on the TODO.
-
-## License
-
-MIT — see `LICENSE`.
