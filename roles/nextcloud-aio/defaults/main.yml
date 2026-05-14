@@ -1,0 +1,27 @@
+---
+# Pin a specific tag to avoid silent upgrades. Bump deliberately.
+nextcloud_aio_image: "nextcloud/all-in-one:latest"
+
+nextcloud_aio_install_dir: /opt/nextcloud-aio
+# Host path for all Nextcloud user data (files, db, redis, etc.).
+# AIO mounts this path into the individual containers it spawns.
+nextcloud_aio_data_dir: /mnt/nextcloud-data
+
+# Port on which the AIO mastercontainer admin UI is reachable.
+# nginx-proxy fronts this at nextcloud.{{ cloudflare_zone }} → https://192.168.88.110:8080.
+nextcloud_aio_admin_port: 8080
+
+# Port AIO will bind the Apache/Nextcloud instance to.
+# nginx-proxy fronts this at cloud.{{ cloudflare_zone }} → http://192.168.88.110:11000.
+nextcloud_aio_apache_port: 11000
+
+# Public domain Nextcloud answers to (browser-facing, no https://).
+# Must match the domain configured in nginx-proxy for port 11000.
+nextcloud_aio_domain: "cloud.{{ cloudflare_zone }}"
+
+# Set true when AIO cannot reach the domain itself (reverse-proxy setup).
+# Prevents AIO from blocking setup on domain validation failure.
+nextcloud_aio_skip_domain_validation: "true"
+
+# AIO admin UI passphrase. Must be set in secrets.yml — no default.
+# nextcloud_aio_password: defined in secrets.yml

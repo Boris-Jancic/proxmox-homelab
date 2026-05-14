@@ -19,7 +19,7 @@ proxmox_api_user: "root@pam"
 
 # LXC defaults
 proxmox_template_vmid: 799
-proxmox_storage: "local-lvm"
+proxmox_storage: "data-hdd"
 lxc_template: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
 lxc_storage: local-lvm
 lxc_swap: 256

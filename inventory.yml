@@ -6,6 +6,19 @@ all:
       ansible_user: root
 
   children:
+    virtual_machines:
+      vars:
+        ansible_user: root
+        ansible_python_interpreter: /usr/bin/python3
+
+      hosts:
+        ubuntu-vm1:
+          id: 110
+          ansible_host: 192.168.88.110
+          memory: 6196
+          disk: 512
+          cores: 3
+        
     lxc_containers:
       vars:
         ansible_user: root
@@ -62,12 +75,6 @@ all:
               destination: http://192.168.88.102:8080
               ssl: false
 
-            - name: pve
-              domain: "pve.{{ cloudflare_zone }}"
-              destination: http://192.168.88.105:3000
-              ssl: false
-
-
         pi-hole:
           ctid: 101
           ansible_host: 192.168.88.101
@@ -107,15 +114,6 @@ all:
           # public hostname when fronted by nginx-proxy.
           homepage_allowed_hosts: "homepage.{{ cloudflare_zone }},192.168.88.104:3000"
 
-        pve-scripts-local:
-          ctid: 105
-          ansible_host: 192.168.88.105
-          # Node 22 + native better-sqlite3 build + `npm run build` peaks
-          # well above the 256 MB the other CTs use. 1 GB is comfortable.
-          memory: 1024
-          disk: 8
-          cores: 2
-
     nginx-proxy:
       hosts:
         nginx-proxy:
@@ -135,8 +133,4 @@ all:
     homepage:
       hosts:
         homepage:
-
-    pve-scripts-local:
-      hosts:
-        pve-scripts-local:
 

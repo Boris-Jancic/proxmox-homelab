@@ -1,0 +1,48 @@
+---
+- name: Ensure Nextcloud AIO install directory
+  file:
+    path: "{{ nextcloud_aio_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Ensure Nextcloud AIO data directory
+  file:
+    path: "{{ nextcloud_aio_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Render docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ nextcloud_aio_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Bring Nextcloud AIO stack up
+  command: docker compose up -d
+  args:
+    chdir: "{{ nextcloud_aio_install_dir }}"
+  register: compose_up
+  changed_when: >
+    'Started' in compose_up.stderr
+    or 'Recreated' in compose_up.stderr
+    or 'Created' in compose_up.stderr
+
+- name: Wait for AIO to generate configuration
+  wait_for:
+    path: /var/lib/docker/volumes/nextcloud_aio_mastercontainer/_data/data/configuration.json
+    timeout: 60
+
+- name: Read AIO configuration
+  slurp:
+    src: /var/lib/docker/volumes/nextcloud_aio_mastercontainer/_data/data/configuration.json
+  register: aio_config
+
+- name: Show AIO admin passphrase
+  debug:
+    msg: "Nextcloud AIO passphrase: {{ (aio_config.content | b64decode | from_json).password }}"
