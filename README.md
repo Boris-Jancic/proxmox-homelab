@@ -11,6 +11,7 @@ with idempotent playbooks for LXC provisioning and per-service configuration.
 | vaultwarden | vaultwarden | 8080 | Docker compose. `ADMIN_TOKEN` from `secrets.yml`. |
 | homepage | homepage | 3000 | Docker compose. Templates `settings/services/bookmarks/widgets.yaml` from inventory. |
 | uptime-kuma | uptime-kuma | 3001 | Docker compose. First-run admin setup is browser-only. |
+| pve-scripts-local | pve-scripts-local | 3000 | Bare-metal Node 22 + systemd. Clones [community-scripts/ProxmoxVE-Local](https://github.com/community-scripts/ProxmoxVE-Local), runs `npm run build`, served via `npm start`. |
 | nginx-proxy | nginx-proxy | 80/443 | Bare-metal nginx. One vhost per `nginx_proxy_hosts` entry. Owns `sites-enabled/`. |
 
 The Nextcloud-AIO Ubuntu VM is still manual. Service roles needing Docker
@@ -60,6 +61,15 @@ skips itself in check mode. Run for real; existing CTs report `changed=0`.
 - **homepage** — Ansible owns `settings.yaml` etc. Edit the templates under
   `roles/homepage/templates/`, not the rendered files on the CT.
 - **uptime-kuma** — credentials live in sqlite; no env vars to template.
+- **pve-scripts-local** — web UI for the community Proxmox helper scripts.
+  Bare-metal install (no docker): NodeSource Node 22, `git clone` into
+  `/opt/ProxmoxVE-Local`, `npm install && npx prisma migrate deploy &&
+  npm run build`, runs as `pvescriptslocal.service` (`User=root`).
+  Default ref is `main`; pin via `pve_scripts_local_git_ref` in role
+  defaults to freeze upstream. Re-running the play pulls the ref and
+  rebuilds only when the working tree changed. SQLite state lives at
+  `/opt/ProxmoxVE-Local/data/settings.db`. First-run setup is
+  browser-only — add target PVE nodes (including this host) via the UI.
 
 ### nginx-proxy vhost schema
 
