@@ -1,3 +1,0 @@
----
-- name: Install and configure pve-scripts-local
-  include_tasks: install.yml
