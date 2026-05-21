@@ -1,6 +1,8 @@
 # Managed by Ansible (roles/homepage/templates/services.yaml.j2).
-# Hostnames pull from inventory.yml so any IP change re-renders here on next
-# `ansible-playbook playbooks/configure-homepage.yml` run.
+# User-facing `href` links go through nginx-proxy at <sub>.{{ cloudflare_zone }}
+# so external (Cloudflare-proxied) and LAN access both work.
+# Widget `url` fields stay on internal IPs — the homepage container talks to
+# them directly so DNS/Cloudflare round-trips don't slow widget refreshes.
 #
 # Widget secrets use homepage's HOMEPAGE_VAR_* env-var substitution so
 # secrets.yml values never land in this file. The compose template wires the
@@ -8,12 +10,12 @@
 
 - Infrastructure:
     - Proxmox:
-        href: https://{{ hostvars['pve'].ansible_host }}:8006/
+        href: https://proxmox.{{ cloudflare_zone }}/
         description: PVE node management
         icon: proxmox.png
 
     - Pi-hole:
-        href: http://{{ hostvars['pi-hole'].ansible_host }}/admin
+        href: https://pihole.{{ cloudflare_zone }}/admin/
         description: DNS + ad-block
         icon: pi-hole.png
         widget:
@@ -27,18 +29,19 @@
           key: '{% raw %}{{HOMEPAGE_VAR_PIHOLE_KEY}}{% endraw %}'
 
     - Nginx Proxy:
+        # No public vhost — admin of the proxy itself stays on the LAN IP.
         href: http://{{ hostvars['nginx-proxy'].ansible_host }}/
         description: Reverse proxy (manual config)
         icon: nginx.png
 
 - Services:
     - Vaultwarden:
-        href: http://{{ hostvars['vaultwarden'].ansible_host }}:8080/
+        href: https://vaultwarden.{{ cloudflare_zone }}/
         description: Password manager
         icon: vaultwarden.png
 
     - Uptime Kuma:
-        href: http://{{ hostvars['uptime-kuma'].ansible_host }}:3001/
+        href: https://kuma.{{ cloudflare_zone }}/
         description: Service uptime monitor
         icon: uptime-kuma.png
         # Uncomment once you've created an API key in Uptime Kuma settings,
@@ -51,7 +54,6 @@
 
 - Storage:
     - Nextcloud:
-        # Update once the AIO VM is on the network and you know its IP.
         href: https://nextcloud.{{ cloudflare_zone }}/
         description: File storage + sync
         icon: nextcloud.png

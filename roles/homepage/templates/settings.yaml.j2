@@ -6,6 +6,17 @@ theme: dark
 color: slate
 language: en
 
+# Mountain + milky way (Unsplash). Tuned dark + slight blur so card text
+# stays readable; swap the URL to retheme without touching layout.
+background:
+  image: https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=2400&q=80
+  blur: sm
+  saturate: 50
+  brightness: 50
+  opacity: 100
+
+cardBlur: sm
+
 headerStyle: clean
 target: _blank
 
@@ -19,3 +30,6 @@ layout:
   Storage:
     style: row
     columns: 2
+  Social:
+    style: row
+    columns: 4
