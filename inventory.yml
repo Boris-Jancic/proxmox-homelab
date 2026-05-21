@@ -75,6 +75,11 @@ all:
               destination: http://192.168.88.102:8080
               ssl: false
 
+            - name: netbox
+              domain: "netbox.{{ cloudflare_zone }}"
+              destination: http://192.168.88.105:8080
+              ssl: false
+
         pi-hole:
           ctid: 101
           ansible_host: 192.168.88.101
@@ -114,6 +119,14 @@ all:
           # public hostname when fronted by nginx-proxy.
           homepage_allowed_hosts: "homepage.{{ cloudflare_zone }},192.168.88.104:3000"
 
+        netbox:
+          ctid: 105
+          ansible_host: 192.168.88.105
+          memory: 2048
+          disk: 16
+          cores: 2
+          lxc_docker_host: true
+
     nginx-proxy:
       hosts:
         nginx-proxy:
@@ -133,4 +146,8 @@ all:
     homepage:
       hosts:
         homepage:
+
+    netbox:
+      hosts:
+        netbox:
 

@@ -1,0 +1,6 @@
+---
+- name: Install and configure netbox
+  hosts: netbox
+  gather_facts: true
+  roles:
+    - netbox

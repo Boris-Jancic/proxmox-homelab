@@ -1,0 +1,3 @@
+---
+- name: Deploy netbox via docker compose
+  include_tasks: install.yml

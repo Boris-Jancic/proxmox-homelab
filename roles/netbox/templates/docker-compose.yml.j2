@@ -1,0 +1,108 @@
+services:
+  netbox:
+    image: ghcr.io/netbox-community/netbox:{{ netbox_image_tag }}
+    depends_on:
+      netbox-postgres:
+        condition: service_healthy
+      netbox-redis:
+        condition: service_started
+      netbox-redis-cache:
+        condition: service_started
+    ports:
+      - "{{ netbox_port }}:8080"
+    volumes:
+      - {{ netbox_media_dir }}:/opt/netbox/netbox/media
+      - {{ netbox_reports_dir }}:/opt/netbox/netbox/reports
+      - {{ netbox_scripts_dir }}:/opt/netbox/netbox/scripts
+    environment:
+      ALLOWED_HOSTS: "{{ netbox_allowed_hosts }}"
+      DB_HOST: netbox-postgres
+      DB_NAME: netbox
+      DB_USER: netbox
+      DB_PASSWORD: "{{ netbox_db_password }}"
+      REDIS_HOST: netbox-redis
+      REDIS_DATABASE: 0
+      REDIS_PASSWORD: "{{ netbox_redis_password }}"
+      REDIS_SSL: "false"
+      REDIS_CACHE_HOST: netbox-redis-cache
+      REDIS_CACHE_DATABASE: 1
+      REDIS_CACHE_PASSWORD: "{{ netbox_redis_cache_password }}"
+      REDIS_CACHE_SSL: "false"
+      SECRET_KEY: "{{ netbox_secret_key }}"
+      SUPERUSER_NAME: "{{ netbox_superuser_name }}"
+      SUPERUSER_EMAIL: "{{ netbox_superuser_email }}"
+      SUPERUSER_PASSWORD: "{{ netbox_superuser_password }}"
+    restart: unless-stopped
+
+  netbox-worker:
+    image: ghcr.io/netbox-community/netbox:{{ netbox_image_tag }}
+    depends_on:
+      netbox:
+        condition: service_started
+    command: /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
+    volumes:
+      - {{ netbox_media_dir }}:/opt/netbox/netbox/media
+      - {{ netbox_reports_dir }}:/opt/netbox/netbox/reports
+      - {{ netbox_scripts_dir }}:/opt/netbox/netbox/scripts
+    environment:
+      DB_HOST: netbox-postgres
+      DB_NAME: netbox
+      DB_USER: netbox
+      DB_PASSWORD: "{{ netbox_db_password }}"
+      REDIS_HOST: netbox-redis
+      REDIS_DATABASE: 0
+      REDIS_PASSWORD: "{{ netbox_redis_password }}"
+      REDIS_CACHE_HOST: netbox-redis-cache
+      REDIS_CACHE_DATABASE: 1
+      REDIS_CACHE_PASSWORD: "{{ netbox_redis_cache_password }}"
+      SECRET_KEY: "{{ netbox_secret_key }}"
+    restart: unless-stopped
+
+  netbox-housekeeping:
+    image: ghcr.io/netbox-community/netbox:{{ netbox_image_tag }}
+    depends_on:
+      netbox:
+        condition: service_started
+    command: /opt/netbox/housekeeping.sh
+    volumes:
+      - {{ netbox_media_dir }}:/opt/netbox/netbox/media
+    environment:
+      DB_HOST: netbox-postgres
+      DB_NAME: netbox
+      DB_USER: netbox
+      DB_PASSWORD: "{{ netbox_db_password }}"
+      REDIS_HOST: netbox-redis
+      REDIS_DATABASE: 0
+      REDIS_PASSWORD: "{{ netbox_redis_password }}"
+      REDIS_CACHE_HOST: netbox-redis-cache
+      REDIS_CACHE_DATABASE: 1
+      REDIS_CACHE_PASSWORD: "{{ netbox_redis_cache_password }}"
+      SECRET_KEY: "{{ netbox_secret_key }}"
+    restart: unless-stopped
+
+  netbox-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: netbox
+      POSTGRES_USER: netbox
+      POSTGRES_PASSWORD: "{{ netbox_db_password }}"
+    volumes:
+      - {{ netbox_postgres_dir }}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "netbox"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  netbox-redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass "{{ netbox_redis_password }}"
+    volumes:
+      - {{ netbox_redis_dir }}:/data
+    restart: unless-stopped
+
+  netbox-redis-cache:
+    image: redis:7-alpine
+    command: redis-server --requirepass "{{ netbox_redis_cache_password }}"
+    restart: unless-stopped

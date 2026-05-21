@@ -12,7 +12,6 @@ As I continued to add more & more services the script balooned so I decided to m
 | vaultwarden | vaultwarden | 8080 | Docker compose. `ADMIN_TOKEN` from `secrets.yml`. |
 | homepage | homepage | 3000 | Docker compose. Templates `settings/services/bookmarks/widgets.yaml` from inventory. |
 | uptime-kuma | uptime-kuma | 3001 | Docker compose. First-run admin setup is browser-only. |
-| pve-scripts-local | pve-scripts-local | 3000 | Bare-metal Node 22 + systemd. Clones [community-scripts/ProxmoxVE-Local](https://github.com/community-scripts/ProxmoxVE-Local), runs `npm run build`, served via `npm start`. |
 | nextcloud-aio | ubuntu-vm1 (VM 110) | 8080 (admin), 11000 (Nextcloud) | Docker compose. Ubuntu 24.04 VM. AIO mastercontainer spawns all sub-services. Passphrase printed by Ansible after deploy. |
 | nginx-proxy | nginx-proxy | 80/443 | Bare-metal nginx. One vhost per `nginx_proxy_hosts` entry. Owns `sites-enabled/`. |
 

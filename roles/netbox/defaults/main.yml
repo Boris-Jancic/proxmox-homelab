@@ -1,0 +1,22 @@
+---
+netbox_image_tag: "v4.2"
+
+netbox_install_dir: /opt/netbox
+netbox_media_dir: /opt/netbox/data/media
+netbox_reports_dir: /opt/netbox/data/reports
+netbox_scripts_dir: /opt/netbox/data/scripts
+netbox_postgres_dir: /opt/netbox/data/postgres
+netbox_redis_dir: /opt/netbox/data/redis
+
+netbox_port: 8080
+
+# netbox_secret_key, netbox_db_password, netbox_redis_password,
+# netbox_redis_cache_password, netbox_superuser_password — all must be in
+# secrets.yml. Generate secret_key with:
+#   python3 -c "import secrets; print(secrets.token_urlsafe(50))"
+
+netbox_superuser_name: admin
+netbox_superuser_email: "admin@{{ cloudflare_zone }}"
+
+# ALLOWED_HOSTS: space-separated list. Include LAN IP and public domain.
+netbox_allowed_hosts: "netbox.{{ cloudflare_zone }} 192.168.88.105"

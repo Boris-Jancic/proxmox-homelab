@@ -1,0 +1,34 @@
+---
+- name: Ensure netbox directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  loop:
+    - "{{ netbox_install_dir }}"
+    - "{{ netbox_media_dir }}"
+    - "{{ netbox_reports_dir }}"
+    - "{{ netbox_scripts_dir }}"
+    - "{{ netbox_postgres_dir }}"
+    - "{{ netbox_redis_dir }}"
+
+- name: Render docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ netbox_install_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Bring netbox stack up
+  command: docker compose up -d
+  args:
+    chdir: "{{ netbox_install_dir }}"
+  register: compose_up
+  changed_when: >
+    'Started' in compose_up.stderr
+    or 'Recreated' in compose_up.stderr
+    or 'Created' in compose_up.stderr
