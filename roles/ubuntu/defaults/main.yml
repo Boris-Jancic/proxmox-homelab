@@ -1,0 +1,16 @@
+---
+# Ubuntu 24.04 LTS cloud image. Replace URL + name to switch release.
+ubuntu_cloud_image_url: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+ubuntu_cloud_image_name: "noble-server-cloudimg-amd64.img"
+ubuntu_cloud_image_dest: "/var/lib/vz/template/iso/{{ ubuntu_cloud_image_name }}"
+
+ubuntu_bridge: "vmbr0"
+
+# These map directly from inventory host vars.
+# When the play targets `virtual_machines`, these resolve automatically.
+vm_id: "{{ id }}"
+vm_name: "{{ inventory_hostname }}"
+vm_memory: "{{ memory }}"
+vm_cores: "{{ cores }}"
+vm_disk: "{{ disk }}"
+vm_ip: "{{ ansible_host }}"

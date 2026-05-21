@@ -1,0 +1,23 @@
+services:
+  nextcloud-aio-mastercontainer:
+    image: {{ nextcloud_aio_image }}
+    init: true
+    restart: always
+    container_name: nextcloud-aio-mastercontainer
+    volumes:
+      - nextcloud_aio_mastercontainer:/mnt/docker-aio-config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "{{ nextcloud_aio_admin_port }}:8080"
+      - "8443:8443"
+    environment:
+      APACHE_PORT: "{{ nextcloud_aio_apache_port }}"
+      APACHE_IP_BINDING: "0.0.0.0"
+      NEXTCLOUD_DATADIR: "{{ nextcloud_aio_data_dir }}"
+      NC_DOMAIN: "{{ nextcloud_aio_domain }}"
+      SKIP_DOMAIN_VALIDATION: "{{ nextcloud_aio_skip_domain_validation }}"
+      AIO_PASSWORD: "{{ nextcloud_aio_password }}"
+
+volumes:
+  nextcloud_aio_mastercontainer:
+    name: nextcloud_aio_mastercontainer

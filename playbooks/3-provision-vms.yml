@@ -1,0 +1,47 @@
+---
+# All Proxmox API calls and qm commands run on the PVE host itself.
+# `connection: local` keeps execution local while iterating over VM inventory entries.
+- name: Provision Ubuntu VMs via Proxmox API
+  hosts: virtual_machines
+  gather_facts: false
+  connection: local
+  roles:
+    - ubuntu
+
+- name: Wait for VMs to accept SSH connections
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH port on each VM
+      wait_for:
+        host: "{{ hostvars[item].ansible_host }}"
+        port: 22
+        timeout: 300
+        sleep: 5
+      loop: "{{ groups['virtual_machines'] }}"
+      loop_control:
+        label: "{{ item }}"
+
+- name: Base configuration for Ubuntu VMs
+  hosts: virtual_machines
+  gather_facts: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install base packages
+      apt:
+        name:
+          - qemu-guest-agent
+          - curl
+          - ca-certificates
+          - gnupg
+        state: present
+
+    - name: Enable and start QEMU guest agent
+      systemd:
+        name: qemu-guest-agent
+        enabled: true
+        state: started

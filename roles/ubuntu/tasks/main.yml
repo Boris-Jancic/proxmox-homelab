@@ -1,0 +1,75 @@
+---
+- name: Download Ubuntu cloud image
+  get_url:
+    url: "{{ ubuntu_cloud_image_url }}"
+    dest: "{{ ubuntu_cloud_image_dest }}"
+    mode: "0644"
+
+# state=present is idempotent — returns changed=false if VM already exists.
+# All disk/cloud-init setup is gated on vm_create.changed so re-runs are no-ops.
+- name: Create VM skeleton
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    validate_certs: false
+    node: "{{ proxmox_node }}"
+    vmid: "{{ vm_id }}"
+    name: "{{ vm_name }}"
+    memory: "{{ vm_memory }}"
+    cores: "{{ vm_cores }}"
+    net:
+      net0: "virtio,bridge={{ ubuntu_bridge }}"
+    onboot: true
+    state: present
+  register: vm_create
+
+- name: Import cloud image as disk
+  command: >
+    qm importdisk {{ vm_id }}
+    {{ ubuntu_cloud_image_dest }}
+    {{ proxmox_storage }}
+  when: vm_create.changed
+
+# Write pubkey to temp file — qm set --sshkeys requires a file path.
+- name: Write SSH pubkey to temp file
+  copy:
+    content: "{{ controller_ssh_pubkey }}\n"
+    dest: /tmp/ansible_vm_sshkey.pub
+    mode: "0600"
+  when: vm_create.changed
+
+- name: Attach disk, configure cloud-init, serial console, QEMU agent
+  command: >
+    qm set {{ vm_id }}
+    --virtio0 {{ proxmox_storage }}:vm-{{ vm_id }}-disk-0,discard=on
+    --ide2 {{ proxmox_storage }}:cloudinit
+    --boot order=virtio0
+    --vga std
+    --agent enabled=1
+    --ciuser root
+    --cipassword {{ ubuntu_vm_password }}
+    --sshkeys /tmp/ansible_vm_sshkey.pub
+    --ipconfig0 ip={{ vm_ip }}{{ network_prefix }},gw={{ network_gateway }}
+    --nameserver {{ network_gateway }}
+  when: vm_create.changed
+
+- name: Remove temp SSH pubkey file
+  file:
+    path: /tmp/ansible_vm_sshkey.pub
+    state: absent
+  when: vm_create.changed
+
+- name: Resize disk to {{ vm_disk }}G
+  command: qm disk resize {{ vm_id }} virtio0 {{ vm_disk }}G
+  when: vm_create.changed
+
+- name: Start VM
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    validate_certs: false
+    node: "{{ proxmox_node }}"
+    vmid: "{{ vm_id }}"
+    state: started

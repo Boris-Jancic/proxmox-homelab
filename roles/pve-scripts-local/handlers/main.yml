@@ -1,0 +1,9 @@
+---
+- name: Reload systemd
+  systemd:
+    daemon_reload: true
+
+- name: Restart pve-scripts-local
+  systemd:
+    name: "{{ pve_scripts_local_service_name }}"
+    state: restarted

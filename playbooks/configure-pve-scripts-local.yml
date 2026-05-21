@@ -1,0 +1,6 @@
+---
+- name: Install and configure pve-scripts-local
+  hosts: pve-scripts-local
+  gather_facts: true
+  roles:
+    - pve-scripts-local

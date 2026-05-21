@@ -1,0 +1,120 @@
+---
+# Build toolchain is required for better-sqlite3's native compile step.
+# git/curl/ca-certificates are needed for NodeSource + cloning the repo.
+- name: Install base packages
+  apt:
+    name:
+      - build-essential
+      - ca-certificates
+      - curl
+      - git
+    state: present
+    update_cache: true
+
+# NodeSource ships a single setup script per major. It writes
+# /etc/apt/sources.list.d/nodesource.list and the signing key, then we
+# install `nodejs` from that repo. Re-running the setup script is cheap
+# and idempotent — it overwrites the same files.
+- name: Check installed node major version
+  command: node -v
+  register: node_version
+  changed_when: false
+  failed_when: false
+
+- name: Add NodeSource repo for Node {{ pve_scripts_local_node_major }}
+  shell: |
+    set -o pipefail
+    curl -fsSL https://deb.nodesource.com/setup_{{ pve_scripts_local_node_major }}.x | bash -
+  args:
+    executable: /bin/bash
+  when: >
+    node_version.rc != 0
+    or not node_version.stdout.startswith('v' ~ pve_scripts_local_node_major ~ '.')
+
+- name: Install nodejs
+  apt:
+    name: nodejs
+    state: present
+    update_cache: true
+
+- name: Clone ProxmoxVE-Local
+  git:
+    repo: "{{ pve_scripts_local_repo }}"
+    dest: "{{ pve_scripts_local_install_dir }}"
+    version: "{{ pve_scripts_local_git_ref }}"
+    # `update: true` would also pull on every run; we want that because
+    # `main` is the default ref and users expect re-running the play to
+    # pick up upstream fixes. Force=false leaves local edits alone (which
+    # this role doesn't make — there are none to clobber).
+    update: true
+    force: false
+  register: pve_scripts_local_clone
+
+# `.env.example` is committed; copy it once. Upstream doesn't define any
+# required env vars, so the example is sufficient.
+- name: Seed .env from .env.example
+  copy:
+    src: "{{ pve_scripts_local_install_dir }}/.env.example"
+    dest: "{{ pve_scripts_local_install_dir }}/.env"
+    remote_src: true
+    force: false
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Ensure data dir exists
+  file:
+    path: "{{ pve_scripts_local_install_dir }}/data"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# Only rebuild when the working tree changed. `npm install` is slow
+# (native compile of better-sqlite3); skipping when nothing moved keeps
+# re-runs fast.
+- name: Install node dependencies
+  command: npm install
+  args:
+    chdir: "{{ pve_scripts_local_install_dir }}"
+  when: pve_scripts_local_clone.changed
+  notify: Restart pve-scripts-local
+
+- name: Generate prisma client
+  command: npx prisma generate
+  args:
+    chdir: "{{ pve_scripts_local_install_dir }}"
+  when: pve_scripts_local_clone.changed
+  notify: Restart pve-scripts-local
+
+- name: Apply prisma migrations
+  command: npx prisma migrate deploy
+  args:
+    chdir: "{{ pve_scripts_local_install_dir }}"
+  when: pve_scripts_local_clone.changed
+  notify: Restart pve-scripts-local
+
+- name: Build app
+  command: npm run build
+  args:
+    chdir: "{{ pve_scripts_local_install_dir }}"
+  when: pve_scripts_local_clone.changed
+  notify: Restart pve-scripts-local
+
+- name: Install systemd unit
+  template:
+    src: pvescriptslocal.service.j2
+    dest: "/etc/systemd/system/{{ pve_scripts_local_service_name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart pve-scripts-local
+
+- name: Enable and start pve-scripts-local
+  systemd:
+    name: "{{ pve_scripts_local_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true

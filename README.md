@@ -1,7 +1,8 @@
 # Proxmox Homelab — Ansible
 
-Ansible-managed single-node Proxmox homelab. Replaces an earlier `init-all.sh`
-with idempotent playbooks for LXC provisioning and per-service configuration.
+Ansible-managed jerry-rigged single-node(for now) Proxmox homelab.
+Replaces an earlier `init-all.sh` script which provisioned my LXC's.
+As I continued to add more & more services the script balooned so I decided to make this repository to have everything managed as IaC.
 
 ## Services
 
@@ -11,10 +12,13 @@ with idempotent playbooks for LXC provisioning and per-service configuration.
 | vaultwarden | vaultwarden | 8080 | Docker compose. `ADMIN_TOKEN` from `secrets.yml`. |
 | homepage | homepage | 3000 | Docker compose. Templates `settings/services/bookmarks/widgets.yaml` from inventory. |
 | uptime-kuma | uptime-kuma | 3001 | Docker compose. First-run admin setup is browser-only. |
+| pve-scripts-local | pve-scripts-local | 3000 | Bare-metal Node 22 + systemd. Clones [community-scripts/ProxmoxVE-Local](https://github.com/community-scripts/ProxmoxVE-Local), runs `npm run build`, served via `npm start`. |
+| nextcloud-aio | ubuntu-vm1 (VM 110) | 8080 (admin), 11000 (Nextcloud) | Docker compose. Ubuntu 24.04 VM. AIO mastercontainer spawns all sub-services. Passphrase printed by Ansible after deploy. |
 | nginx-proxy | nginx-proxy | 80/443 | Bare-metal nginx. One vhost per `nginx_proxy_hosts` entry. Owns `sites-enabled/`. |
 
-The Nextcloud-AIO Ubuntu VM is still manual. Service roles needing Docker
-pull `roles/docker/` via `meta/main.yml` (Ansible deduplicates per play).
+Service roles needing Docker pull `roles/docker/` via `meta/main.yml`
+(Ansible deduplicates per play). The `docker` role supports both Debian
+(LXCs) and Ubuntu (VMs) via `ansible_distribution | lower`.
 
 ## Layout
 
@@ -44,7 +48,9 @@ roles/<service>/            defaults, tasks, templates, handlers
 ```
 ansible-playbook playbooks/1-provision-lxc.yml               # create + start LXCs
 ansible-playbook playbooks/2-bootstrap-existing-lxc-keys.yml # one-time SSH retrofit
+ansible-playbook playbooks/3-provision-vms.yml               # create Ubuntu VM + base config
 ansible-playbook playbooks/configure-<service>.yml           # per-service install + configure
+ansible-playbook playbooks/configure-nextcloud.yml           # Nextcloud AIO (prints passphrase)
 ```
 
 `--check` doesn't work for `provision-lxc` — `community.general.proxmox`
@@ -60,6 +66,10 @@ skips itself in check mode. Run for real; existing CTs report `changed=0`.
 - **homepage** — Ansible owns `settings.yaml` etc. Edit the templates under
   `roles/homepage/templates/`, not the rendered files on the CT.
 - **uptime-kuma** — credentials live in sqlite; no env vars to template.
+- **nextcloud-aio** — Ubuntu VM (110) provisioned via `3-provision-vms.yml`. After
+  `configure-nextcloud.yml`, Ansible prints the AIO admin passphrase. Visit
+  `https://192.168.88.110:8080` to complete setup. `NC_DOMAIN` pre-filled from
+  `nextcloud_aio_domain`. `AIO_PASSWORD` sets passphrase from `secrets.yml`.
 
 ### nginx-proxy vhost schema
 
@@ -121,14 +131,10 @@ rsync -av --delete \
 
 - Pi-hole DNS upstreams set once via `setupVars.conf` at install, not reasserted.
 - Pi-hole v5.x unsupported (assumes `pihole.toml`).
-- Nextcloud-AIO VM is manual.
+- Nextcloud-AIO first-run domain/storage setup is browser-only after Ansible deploy.
 - No vault — `secrets.yml` is plain YAML. `ansible-vault encrypt` before
   pushing anywhere public.
 - Vaultwarden `ADMIN_TOKEN` is plaintext in the rendered compose file
   (argon2 hash form preferred; not done).
 - `community.general.proxmox` is deprecated in favor of `community.proxmox`;
   migration on the TODO.
-
-## License
-
-MIT — see `LICENSE`.

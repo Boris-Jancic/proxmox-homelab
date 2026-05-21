@@ -6,6 +6,19 @@ all:
       ansible_user: root
 
   children:
+    virtual_machines:
+      vars:
+        ansible_user: root
+        ansible_python_interpreter: /usr/bin/python3
+
+      hosts:
+        ubuntu-vm1:
+          id: 110
+          ansible_host: 192.168.88.110
+          memory: 6196
+          disk: 512
+          cores: 3
+        
     lxc_containers:
       vars:
         ansible_user: root
@@ -61,7 +74,6 @@ all:
               domain: "vaultwarden.{{ cloudflare_zone }}"
               destination: http://192.168.88.102:8080
               ssl: false
-
 
         pi-hole:
           ctid: 101
